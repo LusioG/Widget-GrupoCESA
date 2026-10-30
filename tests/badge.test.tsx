@@ -39,6 +39,7 @@ const stateWith = (
     gmail: { status: 'disconnected' }
   },
   googleHasCredentials: false,
+  aiKeySet: false,
   autostart: false,
   ...over
 })

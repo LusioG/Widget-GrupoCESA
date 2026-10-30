@@ -2,6 +2,8 @@ import type { SettingsPatch } from './settingsSchema'
 import type {
   ActionResult,
   AppState,
+  Briefing,
+  BriefingSummary,
   ClickUpList,
   GmailLabel,
   GoogleFeature,
@@ -58,5 +60,21 @@ export interface Api {
   }
   panel: {
     close(): void
+  }
+  // The daily summary: its own window in the middle of the screen.
+  briefing: {
+    list(): Promise<BriefingSummary[]> // saved days, newest first
+    get(date?: string): Promise<Briefing | null> // that day's, or the latest
+    open(date?: string): Promise<void> // shows that day's, or today's (made now if missing)
+    regenerate(): Promise<Briefing | null> // rebuilds today's with the data of now
+    close(): void
+    // The main process sends the summary to show, each time the window is opened.
+    onShow(cb: (briefing: Briefing) => void): () => void
+  }
+  // The Gemini key (stored encrypted, never sent back to the pages).
+  ai: {
+    saveKey(key: string): Promise<ActionResult> // stores it after checking it works
+    removeKey(): Promise<void>
+    test(): Promise<ActionResult> // checks the stored key with the chosen model
   }
 }

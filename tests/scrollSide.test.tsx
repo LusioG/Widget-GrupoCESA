@@ -39,6 +39,7 @@ const stateFor = (widget: Partial<AppState['settings']['widget']>): AppState => 
     gmail: { status: 'disconnected' }
   },
   googleHasCredentials: false,
+  aiKeySet: false,
   autostart: false
 })
 

@@ -68,6 +68,7 @@ const setState = (over: Partial<AppState> = {}): void =>
       settings: DEFAULT_SETTINGS,
       accounts: accounts(),
       googleHasCredentials: false,
+      aiKeySet: false,
       autostart: false,
       ...over
     }
@@ -373,7 +374,10 @@ describe('settings list', () => {
     expect(screen.getByText('2 de 4 conectadas')).toBeTruthy()
     expect(screen.getByText('09:00–18:00 · avisos activos')).toBeTruthy()
     expect(screen.getByText('Atajo Ctrl + Alt + P')).toBeTruthy()
-    expect(screen.getByText(strings.settings.summary.ai)).toBeTruthy()
+    // "Resumen diario con IA" is one section now: the AI has no menu of its own.
+    expect(screen.getByText(strings.settings.sections.briefing)).toBeTruthy()
+    expect(screen.getByText('Cada día desde las 09:00 · sin IA')).toBeTruthy()
+    expect(screen.queryByText('IA')).toBeNull()
     expect(document.querySelectorAll('button svg').length).toBeGreaterThanOrEqual(7)
   })
 

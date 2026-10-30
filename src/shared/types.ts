@@ -87,7 +87,75 @@ export type Settings = {
   hotkey: { enabled: boolean; accelerator: string }
   // Hide the widget (and mute its sound) while something is shown full screen or presented.
   presentation: { autoHide: boolean; hideFromCapture: boolean }
+  // Who the daily summary greets ("Buen día, Ana"). Empty: it greets without a name.
+  profile: { name: string }
+  // The daily summary: it opens the first time you are active on a work day after `time`.
+  briefing: { enabled: boolean; time: string }
+  // The AI writes the daily summary. The key itself is never a setting: it lives encrypted.
+  ai: {
+    enabled: boolean
+    model: string
+    // What the summary brings: the built-in sections that are on (all, by default), and anything
+    // else the user added. The tone and the answer format are fixed in the app.
+    sections: BriefingSectionKey[]
+    extras: string[]
+    sendMail: boolean // let the AI read the subject and sender of mail
+    sendSlack: boolean // let the AI read Slack messages
+  }
   onboardingDone: boolean
+}
+
+export type BriefingSectionKey =
+  | 'meetings'
+  | 'priorities'
+  | 'nextTasks'
+  | 'yesterday'
+  | 'waiting'
+  | 'since'
+
+// A section of the summary written in words by the AI; `refs` are the items it talks about.
+export type BriefingNarrativeSection = {
+  key: BriefingSectionKey
+  text: string
+  refs: string[]
+}
+
+// One line of the daily summary: a meeting, task, mail or message, as it was when it was made.
+export type BriefingItem = {
+  id: string
+  source: Source
+  kind: Signal['kind']
+  title: string
+  url: string
+  startsAt?: number
+  endsAt?: number
+  meetingUrl?: string
+  dueAt?: number
+  priority?: TaskPriority
+  urgent: boolean
+  note?: string // written by the AI: why it matters
+}
+
+// One entry of the list of past summaries.
+export type BriefingSummary = { date: string; createdAt: number; mode: Briefing['mode'] }
+
+// A daily summary, saved as it was shown so it can be opened again later.
+export type Briefing = {
+  date: string // the local day, YYYY-MM-DD
+  createdAt: number
+  name: string
+  mode: 'rules' | 'ai'
+  greeting: string // "Buen día, Ana"
+  intro: string
+  meetings: BriefingItem[] // today's
+  priorities: BriefingItem[] // the 5 that matter most
+  nextTasks: BriefingItem[] // the next 3 ordinary tasks to fall due
+  yesterday: BriefingItem[] // still pending from yesterday
+  waiting: BriefingItem[] // sent and not answered
+  since: { emails: number; messages: number } // new since the last summary
+  // Only when the AI wrote it: the summary in words, with links to the items it mentions. The
+  // lists above stay as the detail behind it.
+  narrative?: BriefingNarrativeSection[]
 }
 
 export type AppState = {
@@ -104,6 +172,7 @@ export type AppState = {
   settings: Settings
   accounts: Record<Source, AccountInfo>
   googleHasCredentials: boolean
+  aiKeySet: boolean // a Gemini key is stored (its value never reaches the pages)
   autostart: boolean
 }
 

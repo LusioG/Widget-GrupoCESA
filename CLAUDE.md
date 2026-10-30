@@ -6,7 +6,7 @@ Stack: Electron, electron-vite, React 19, Tailwind v4 (tokens in `src/renderer/a
 
 ## Decisions to keep
 - Read-only integrations (ClickUp, Google Calendar/Gmail, Slack). ClickUp client exposes only GET.
-- AI / daily summary (Phase 8) is PAUSED until the user explicitly authorizes it. Do not start it.
+- Phase 8 (daily summary) is authorized and in progress. The AI is Gemini with the user's own key (stored in `secrets.bin`, never in settings, logs or the repo), and it is used ONLY to write the daily summary. It works without AI (rules summary is the fallback), sends the minimum by default (meeting + ClickUp titles; mail/Slack only as counts unless the user opts in per source), masks sensitive text, and records every request in `ai_audit_log`. Gemini model names change often: check docs before changing the default in `settingsSchema.ts`.
 - Work phase by phase; the user authorizes each one. Installer (electron-builder NSIS, autostart, auto-update, keep userData stable) is still pending.
 - Never commit or log secrets. Credentials live encrypted in `%APPDATA%\widget\secrets.bin`; logs in `%APPDATA%\widget\logs`.
 - Tests must NEVER delete `%APPDATA%\widget` or kill every electron process: use an isolated `--user-data-dir` and kill by PID.

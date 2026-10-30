@@ -169,3 +169,46 @@ export function TextField(props: React.InputHTMLAttributes<HTMLInputElement>): R
     />
   )
 }
+
+const COMPLETE_TIME = /^\d{2}:\d{2}$/
+
+// A time of day (HH:MM) that is saved in the main process. The field keeps its own text while it
+// is being edited: a field tied straight to the saved value snaps back to the old time while the
+// new one is still on its way, and the hour cannot be changed. A complete time is saved at once;
+// an empty or half-typed one is not, and the saved time comes back when the field is left.
+export function TimeField({
+  value,
+  onCommit,
+  label
+}: {
+  value: string
+  onCommit: (value: string) => void
+  label: string
+}): React.JSX.Element {
+  const [draft, setDraft] = useState(value)
+  const [focused, setFocused] = useState(false)
+  // Follow a change that came from elsewhere, but never rewrite what is being typed.
+  const [seen, setSeen] = useState(value)
+  if (value !== seen) {
+    setSeen(value)
+    if (!focused) setDraft(value)
+  }
+
+  return (
+    <TextField
+      type="time"
+      aria-label={label}
+      value={draft}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => {
+        const next = e.target.value
+        setDraft(next)
+        if (COMPLETE_TIME.test(next) && next !== value) onCommit(next)
+      }}
+      onBlur={() => {
+        setFocused(false)
+        if (!COMPLETE_TIME.test(draft)) setDraft(value)
+      }}
+    />
+  )
+}

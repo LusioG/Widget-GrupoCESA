@@ -64,6 +64,15 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
   mismo para **Remitentes a ignorar**. Todo lo
   que envíen es urgente: sube al tope, se marca en rojo y avisa con sonido incluso en modo foco.
   Ignora mayúsculas y acentos y vale para Gmail y Slack.
+- **Resumen del día:** una ventana centrada y sencilla, con el estilo del widget, que sale una sola
+  vez al día la primera vez que usas el equipo en tu horario laboral, a partir de la hora que elijas
+  (Ajustes → Resumen diario). Te saluda por tu nombre ("Buen día, Ana") y reúne tus reuniones de
+  hoy, las 5 prioridades principales, las próximas 3 tareas normales, lo pendiente de ayer, lo que
+  espera respuesta y lo nuevo desde el último resumen. Con IA (tu clave de Gemini) lo redacta en
+  prosa y deja enlaces pequeños a cada tarea, correo o reunión; la lista completa queda en "Ver
+  todo el detalle". Sin IA, o si falla, sale la lista. Se guarda cada día y se puede volver a verlo
+  desde el icono de hoja del panel, la bandeja ("Ver resumen del día") o Ajustes (últimos 7 días).
+  Las instrucciones para la IA se pueden personalizar en Ajustes.
 - Tamaño del widget, tamaño del panel y transparencia del widget ajustables.
 
 ## Requisitos y cómo ejecutarlo
@@ -179,7 +188,14 @@ canales que quieres ignorar.
   operación de escritura (hay pruebas automáticas que lo comprueban).
 - **Todo se queda en tu equipo.** El widget habla únicamente con ClickUp, Slack y Google, para
   leer tus propios datos. No hay servidor propio, ni analítica, ni envío a terceros.
-- **La IA está desactivada.** Esta versión no envía nada a ningún modelo de lenguaje.
+- **La IA es opcional y viene apagada.** Solo se usa para redactar el resumen diario, y solo si
+  tú pegas tu propia clave de Gemini y la activas. Por defecto lo único que se envía son los
+  títulos y horas de tus reuniones y los títulos, prioridad y vencimiento de tus tareas de ClickUp.
+  De Gmail y Slack solo van cantidades, a menos que actives cada fuente. Antes de enviar se ocultan
+  claves, correos, tarjetas y documentos, y **Ajustes → Resumen diario** guarda las últimas 30
+  consultas tal como salieron, para que las revises o las borres. Con la cuenta gratuita de Google,
+  lo enviado puede usarse para mejorar sus productos y ser leído por personas de Google; con una
+  cuenta de pago no.
 - **Claves y tokens:** cifrados con el almacenamiento seguro de Windows (DPAPI) en
   `%APPDATA%\widget\secrets.bin`. Nunca en texto plano, ni en el código, ni en los registros.
 - **Caché local** (`%APPDATA%\widget\widget.db`, **sin cifrar**): títulos de tareas, texto de
@@ -226,5 +242,5 @@ Estructura: `src/main` (proceso principal: ventanas, conectores, motor de reglas
 ## Qué falta
 
 - **Instalador** para Windows (arranque con el sistema y actualización automática).
-- **Resumen diario con IA:** pausado a propósito hasta que se autorice.
+- Probar el resumen con IA con una clave real de Gemini y datos reales.
 - Pruebas con tus cuentas reales de Google y Slack (hasta ahora solo con servicios simulados).

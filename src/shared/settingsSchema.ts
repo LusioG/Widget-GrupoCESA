@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { DEFAULT_ACCELERATOR, isValidAccelerator } from './accelerator'
+import { BRIEFING_SECTIONS, MAX_EXTRA_LENGTH, MAX_EXTRAS } from './briefingPrompt'
 import { MAX_CALENDAR_DAYS } from './calendarWindow'
 import type { Settings } from './types'
 
@@ -53,6 +54,23 @@ const calendar = z.object({
   show: z.enum(['all', 'meets', 'plain'])
 })
 const gmail = z.object({ labelIds: z.array(z.string().min(1).max(128)).max(100) })
+const profile = z.object({ name: z.string().trim().max(40) })
+const briefing = z.object({ enabled: z.boolean(), time: hhmm })
+const ai = z.object({
+  enabled: z.boolean(),
+  model: z
+    .string()
+    .trim()
+    .min(1)
+    .max(80)
+    .regex(/^[A-Za-z0-9._-]+$/),
+  sections: z
+    .array(z.enum(['meetings', 'priorities', 'nextTasks', 'yesterday', 'waiting', 'since']))
+    .max(6),
+  extras: z.array(z.string().trim().min(1).max(MAX_EXTRA_LENGTH)).max(MAX_EXTRAS),
+  sendMail: z.boolean(),
+  sendSlack: z.boolean()
+})
 
 export const settingsSchema = z.object({
   widget,
@@ -66,6 +84,9 @@ export const settingsSchema = z.object({
   hotkey,
   presentation,
   calendar,
+  profile,
+  briefing,
+  ai,
   onboardingDone: z.boolean()
 })
 
@@ -83,6 +104,9 @@ export const settingsPatchSchema = z
     hotkey: hotkey.partial(),
     presentation: presentation.partial(),
     calendar: calendar.partial(),
+    profile: profile.partial(),
+    briefing: briefing.partial(),
+    ai: ai.partial(),
     onboardingDone: z.boolean()
   })
   .partial()
@@ -118,6 +142,17 @@ export const DEFAULT_SETTINGS: Settings = {
   hotkey: { enabled: true, accelerator: DEFAULT_ACCELERATOR },
   presentation: { autoHide: true, hideFromCapture: true },
   calendar: { daysAhead: 2, show: 'all' }, // today and tomorrow
+  profile: { name: '' },
+  briefing: { enabled: true, time: '09:00' }, // the same as the default start of the work day
+  // Off until a key is added. Mail and Slack contents stay out of what the AI reads unless asked.
+  ai: {
+    enabled: false,
+    model: 'gemini-3.5-flash-lite',
+    sections: [...BRIEFING_SECTIONS],
+    extras: [],
+    sendMail: false,
+    sendSlack: false
+  },
   onboardingDone: false
 }
 
@@ -134,6 +169,9 @@ export function applyPatch(base: Settings, patch: SettingsPatch): Settings {
     hotkey: { ...base.hotkey, ...patch.hotkey },
     presentation: { ...base.presentation, ...patch.presentation },
     calendar: { ...base.calendar, ...patch.calendar },
+    profile: { ...base.profile, ...patch.profile },
+    briefing: { ...base.briefing, ...patch.briefing },
+    ai: { ...base.ai, ...patch.ai },
     onboardingDone: patch.onboardingDone ?? base.onboardingDone
   }
 }

@@ -6,10 +6,10 @@ import {
   BellIcon,
   ChevronRightIcon,
   EyeIcon,
+  FileTextIcon,
   MonitorIcon,
   PanelRightIcon,
   SlidersIcon,
-  SparklesIcon,
   TrashIcon,
   UsersIcon
 } from '@renderer/components/icons'
@@ -17,6 +17,7 @@ import { useAppStore } from '@renderer/store/useAppStore'
 import { Button, Card } from '@renderer/components/ui'
 import { Header } from '../components/Header'
 import { Accounts } from './settings/Accounts'
+import { DailyBriefing } from './settings/DailyBriefing'
 import { PanelSize } from './settings/PanelSize'
 import { Widget } from './settings/Widget'
 import { General } from './settings/General'
@@ -31,11 +32,7 @@ const pages: Record<Section, () => React.JSX.Element> = {
   panel: PanelSize,
   accounts: Accounts,
   watch: Watch,
-  ai: () => (
-    <Card>
-      <p className="text-sm text-cesa-mute">{strings.settings.ai.text}</p>
-    </Card>
-  ),
+  briefing: DailyBriefing,
   schedule: Schedule,
   trash: Trash,
   general: General
@@ -62,7 +59,11 @@ const rows: Record<
       )
   },
   watch: { icon: EyeIcon, summary: () => sm.watch },
-  ai: { icon: SparklesIcon, summary: () => sm.ai },
+  briefing: {
+    icon: FileTextIcon,
+    summary: ({ settings: { briefing, ai }, aiKeySet }) =>
+      sm.briefing(briefing.enabled, briefing.time, ai.enabled && aiKeySet)
+  },
   schedule: {
     icon: BellIcon,
     summary: ({ settings: { schedule, notifications } }) =>

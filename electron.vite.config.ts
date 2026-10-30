@@ -18,7 +18,8 @@ export default defineConfig({
       rollupOptions: {
         input: {
           badge: resolve('src/renderer/badge.html'),
-          panel: resolve('src/renderer/panel.html')
+          panel: resolve('src/renderer/panel.html'),
+          briefing: resolve('src/renderer/briefing.html')
         }
       }
     }

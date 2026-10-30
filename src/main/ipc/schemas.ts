@@ -33,3 +33,17 @@ export const itemActionSchema = z.discriminatedUnion('action', [
 ])
 
 export const sourceSchema = z.enum(['slack', 'gmail', 'calendar', 'clickup'])
+
+// A Gemini key: long enough to be real, short enough to be sane, no spaces.
+export const geminiKeySchema = z
+  .string()
+  .trim()
+  .min(20)
+  .max(256)
+  .regex(/^\S+$/)
+
+// A summary is asked for by its day; without one it means the latest.
+export const briefingDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional()

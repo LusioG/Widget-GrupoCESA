@@ -1,6 +1,9 @@
 import { app, ipcMain, shell } from 'electron'
 import { IPC } from '../../shared/ipcChannels'
+import { strings } from '../../shared/strings'
 import type { ActionResult } from '../../shared/types'
+import { GeminiError, testGemini } from '../ai/gemini'
+import { GEMINI_KEY } from '../ai/key'
 import {
   connectClickUp,
   connectGoogle,
@@ -21,15 +24,20 @@ import {
   undoLastChange
 } from '../appState'
 import { setAutostart } from '../autostart'
+import { deleteSecret, getSecret, setSecret } from '../auth/secrets'
+import { getBriefing, listBriefings, openBriefing, regenerateBriefing } from '../briefing'
 import { applyHotkey } from '../hotkey'
 import { refreshAll } from '../scheduler'
 import { getSettings, updateSettings } from '../settingsStore'
 import { applyLayout } from '../windows/apply'
 import { registerBadgeGestures } from '../windows/badge'
+import { closeBriefingWindow } from '../windows/briefing'
 import { closePanel, isPanelOpen, openPanel, togglePanel } from '../windows/panel'
 import {
+  briefingDateSchema,
   clickupTokenSchema,
   externalUrlSchema,
+  geminiKeySchema,
   googleCredentialsSchema,
   googleFeatureSchema,
   itemActionSchema,
@@ -38,6 +46,18 @@ import {
 } from './schemas'
 
 const invalid: ActionResult = { ok: false, error: 'Datos no válidos.' }
+
+// Asks Gemini a tiny question (no user data) to see that the key and the model are accepted.
+async function checkGemini(key: string, model: string): Promise<ActionResult> {
+  const e = strings.settings.briefing.ai.errors
+  try {
+    await testGemini(key, model)
+    return { ok: true }
+  } catch (error) {
+    if (!(error instanceof GeminiError)) return { ok: false, error: e.generic }
+    return { ok: false, error: error.kind === 'bad_response' ? e.generic : e[error.kind] }
+  }
+}
 
 export function registerIpc(): void {
   ipcMain.handle(IPC.getState, () => getState())
@@ -123,6 +143,42 @@ export function registerIpc(): void {
   })
 
   ipcMain.on(IPC.panelClose, () => closePanel())
+
+  ipcMain.handle(IPC.briefingList, () => listBriefings())
+  ipcMain.handle(IPC.briefingGet, (_event, raw) => {
+    const date = briefingDateSchema.safeParse(raw)
+    return date.success ? getBriefing(date.data) : null
+  })
+  ipcMain.handle(IPC.briefingOpen, async (_event, raw) => {
+    const date = briefingDateSchema.safeParse(raw)
+    if (date.success) await openBriefing(date.data)
+  })
+  ipcMain.handle(IPC.briefingRegenerate, () => regenerateBriefing())
+
+  // The key is checked first and only stored if Google accepts it; it never goes back to a page.
+  ipcMain.handle(IPC.aiSaveKey, async (_event, raw): Promise<ActionResult> => {
+    const key = geminiKeySchema.safeParse(raw)
+    if (!key.success) return invalid
+    const checked = await checkGemini(key.data, getSettings().ai.model)
+    if (!checked.ok) return checked
+    try {
+      setSecret(GEMINI_KEY, key.data)
+    } catch {
+      return { ok: false, error: strings.settings.briefing.ai.errors.secure }
+    }
+    publish()
+    return { ok: true }
+  })
+  ipcMain.handle(IPC.aiRemoveKey, async () => {
+    deleteSecret(GEMINI_KEY)
+    await updateSettings({ ai: { enabled: false } }) // no key, nothing to write the summary with
+    publish()
+  })
+  ipcMain.handle(IPC.aiTest, async (): Promise<ActionResult> => {
+    const key = getSecret(GEMINI_KEY)
+    return key ? checkGemini(key, getSettings().ai.model) : invalid
+  })
+  ipcMain.on(IPC.briefingClose, () => closeBriefingWindow())
 
   registerBadgeGestures({
     onClick: (pressedAt) => togglePanel(pressedAt),

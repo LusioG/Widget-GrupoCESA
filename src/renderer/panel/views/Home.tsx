@@ -166,6 +166,10 @@ export function Home(): React.JSX.Element {
       <Header
         title={strings.panel.greeting}
         subtitle={subtitle}
+        onBriefing={() => {
+          void window.api.briefing.open()
+          window.api.panel.close() // the summary has the screen now
+        }}
         onSettings={() => setView('settings')}
       />
       <div className="relative flex min-h-0 flex-1 flex-col">

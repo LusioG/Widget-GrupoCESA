@@ -3,6 +3,7 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { strings } from '../shared/strings'
 import { initAccounts, startRealtimeConnectors } from './accounts'
 import { initInbox, onStateChange, setSourceSignals, startTicker } from './appState'
+import { initBriefings, startBriefing, stopBriefing } from './briefing'
 import { closeDb, initDb, wasDatabaseReset } from './db/client'
 import { buildFakeSignals } from './fakeData'
 import { applyHotkey, releaseHotkey } from './hotkey'
@@ -15,6 +16,7 @@ import { getSettings, initSettings } from './settingsStore'
 import { registerSystemEvents } from './system'
 import { createTray, refreshTrayMenu } from './tray'
 import { createBadgeWindow, getBadgeWindow } from './windows/badge'
+import { createBriefingWindow } from './windows/briefing'
 import { startTabRows } from './windows/tabRows'
 import { createPanelWindow, openPanel } from './windows/panel'
 
@@ -65,6 +67,7 @@ if (!app.requestSingleInstanceLock()) {
       registerIpc()
       createPanelWindow()
       createBadgeWindow()
+      createBriefingWindow()
       createTray()
       onStateChange(() => refreshTrayMenu())
       registerSystemEvents()
@@ -74,6 +77,7 @@ if (!app.requestSingleInstanceLock()) {
       }
 
       await initInbox()
+      await initBriefings()
       await initAccounts()
       if (process.env['WIDGET_FAKE_DATA'] === '1') {
         // Development aid: demo signals instead of real accounts.
@@ -89,6 +93,7 @@ if (!app.requestSingleInstanceLock()) {
         startRealtimeConnectors(FIRST_SYNC_DELAY_MS)
       }
       startNotifier()
+      startBriefing()
       startTicker()
       applyHotkey()
       startPresence()
@@ -109,6 +114,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on('will-quit', () => {
     releaseHotkey()
+    stopBriefing()
     stopPresence()
     closeDb()
   })

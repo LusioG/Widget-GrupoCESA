@@ -89,7 +89,10 @@ export function pinOnTop(win: BrowserWindow): void {
   win.on('closed', () => clearInterval(timer))
 }
 
-export function loadRenderer(win: BrowserWindow, page: 'badge' | 'panel'): Promise<void> {
+export function loadRenderer(
+  win: BrowserWindow,
+  page: 'badge' | 'panel' | 'briefing'
+): Promise<void> {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     return win.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/${page}.html`)
   }

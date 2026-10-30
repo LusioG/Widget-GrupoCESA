@@ -10,7 +10,9 @@ import type {
   Signal,
   Source
 } from '../shared/types'
+import { GEMINI_KEY } from './ai/key'
 import { getAutostart } from './autostart'
+import { hasSecret } from './auth/secrets'
 import { hasGoogleCredentials } from './connectors/google/auth'
 import { loadInbox, saveInbox, type InboxRow } from './db/repos'
 import { shouldKeep } from './engine/filters'
@@ -110,6 +112,7 @@ export function getState(): AppState {
     settings,
     accounts: { ...accounts },
     googleHasCredentials: hasGoogleCredentials(),
+    aiKeySet: hasSecret(GEMINI_KEY),
     autostart: getAutostart()
   }
 }

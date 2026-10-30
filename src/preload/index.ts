@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Api } from '../shared/api'
 import { IPC } from '../shared/ipcChannels'
-import type { AppState, PanelView } from '../shared/types'
+import type { AppState, Briefing, PanelView } from '../shared/types'
 
 // Fixed, minimal surface: the renderer never gets raw ipcRenderer.
 const api: Api = {
@@ -62,6 +62,23 @@ const api: Api = {
   },
   panel: {
     close: () => ipcRenderer.send(IPC.panelClose)
+  },
+  briefing: {
+    list: () => ipcRenderer.invoke(IPC.briefingList),
+    get: (date) => ipcRenderer.invoke(IPC.briefingGet, date),
+    open: (date) => ipcRenderer.invoke(IPC.briefingOpen, date),
+    regenerate: () => ipcRenderer.invoke(IPC.briefingRegenerate),
+    close: () => ipcRenderer.send(IPC.briefingClose),
+    onShow: (cb) => {
+      const listener = (_: unknown, briefing: Briefing): void => cb(briefing)
+      ipcRenderer.on(IPC.briefingShown, listener)
+      return () => ipcRenderer.removeListener(IPC.briefingShown, listener)
+    }
+  },
+  ai: {
+    saveKey: (key) => ipcRenderer.invoke(IPC.aiSaveKey, key),
+    removeKey: () => ipcRenderer.invoke(IPC.aiRemoveKey),
+    test: () => ipcRenderer.invoke(IPC.aiTest)
   }
 }
 

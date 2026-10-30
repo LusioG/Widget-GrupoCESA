@@ -9,6 +9,7 @@ import {
   setManualHidden,
   setPaused
 } from './appState'
+import { openBriefing } from './briefing'
 import { openPanel, togglePanel } from './windows/panel'
 
 let tray: Tray | null = null
@@ -16,6 +17,7 @@ let tray: Tray | null = null
 function buildMenu(): Menu {
   return Menu.buildFromTemplate([
     { label: strings.tray.openPanel, click: () => openPanel() },
+    { label: strings.tray.briefing, click: () => void openBriefing() },
     {
       label: strings.tray.pauseAlerts,
       type: 'checkbox',

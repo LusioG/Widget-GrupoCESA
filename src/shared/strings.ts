@@ -8,6 +8,7 @@ export const strings = {
     pauseAlerts: 'Pausar alertas',
     focusMode: 'Modo foco',
     hideWidget: 'Ocultar widget',
+    briefing: 'Ver resumen del día',
     settings: 'Ajustes',
     quit: 'Salir'
   },
@@ -28,6 +29,7 @@ export const strings = {
     noAccounts: 'Aún no hay cuentas conectadas. Conéctalas en Ajustes para ver tus pendientes.',
     join: 'Unirse',
     settings: 'Ajustes',
+    briefing: 'Resumen del día',
     back: 'Volver',
     close: 'Cerrar',
     pausedNotice: 'Alertas en pausa',
@@ -108,7 +110,7 @@ export const strings = {
       panel: 'Panel de información',
       accounts: 'Cuentas',
       watch: 'Fuentes y filtros',
-      ai: 'IA',
+      briefing: 'Resumen diario con IA',
       schedule: 'Notificaciones y horarios',
       trash: 'Papelera',
       general: 'General'
@@ -255,7 +257,8 @@ export const strings = {
       accounts: (connected: number, total: number): string =>
         connected === 0 ? 'Ninguna conectada' : `${connected} de ${total} conectadas`,
       watch: 'Listas, etiquetas, canales y remitentes',
-      ai: 'Desactivada',
+      briefing: (enabled: boolean, time: string, ai: boolean): string =>
+        enabled ? `Cada día desde las ${time} · ${ai ? 'escrito con IA' : 'sin IA'}` : 'Desactivado',
       schedule: (from: string, to: string, notifications: boolean): string =>
         `${from}–${to} · ${notifications ? 'avisos activos' : 'avisos apagados'}`,
       trash: (n: number): string =>
@@ -273,8 +276,78 @@ export const strings = {
       emptyWarning: 'Los elementos vaciados no se pueden restaurar y no vuelven a aparecer.',
       cancel: 'Cancelar'
     },
-    ai: {
-      text: 'Las funciones con IA (resumen diario) están desactivadas y no se usan en esta versión. Se habilitarán más adelante, solo con tu autorización.'
+    briefing: {
+      nameTitle: 'Tu nombre',
+      nameHint: 'El resumen te saluda con él: "Buen día, Ana".',
+      namePlaceholder: 'Cómo quieres que te llame',
+      enabled: 'Resumen diario',
+      enabledHint:
+        'Una ventana con tu día: reuniones, prioridades y lo que quedó pendiente. Sale una sola vez al día, cuando empiezas a usar el equipo.',
+      time: 'Mostrar a partir de las',
+      timeHint:
+        'No sale antes de esta hora. Si el equipo estaba apagado, sale la primera vez que lo usas después. Solo en tus días y horario laborales.',
+      timeAfterWork: (end: string): string =>
+        `Esa hora es después de que termina tu horario laboral (${end}), así que el resumen no saldrá. Elige una hora anterior.`,
+      history: 'Resúmenes anteriores',
+      historyEmpty: 'Todavía no hay ninguno.',
+      historyHint: 'Se guardan los últimos 7 días tal como se mostraron.',
+      view: 'Ver',
+      viewToday: 'Ver el de hoy',
+      today: 'Hoy',
+      yesterday: 'Ayer',
+      // The AI that writes the summary: key, what it reads, the instructions and the record.
+      ai: {
+        title: 'Escribirlo con IA (Gemini)',
+        intro:
+          'Con IA, el resumen deja de ser una lista: Gemini lo redacta con tus datos y te cuenta cómo viene el día. Si falla o la apagas, sale el resumen normal.',
+        privacyTitle: 'Antes de activarla',
+        privacy:
+          'Con la cuenta gratuita de Google, lo que se envía puede usarse para mejorar sus productos y personas de Google pueden leerlo. Google pide no enviar información sensible, confidencial ni personal. Con una cuenta de pago no se usa para eso.',
+        keyTitle: 'Clave de API de Gemini',
+        keyHint:
+          'Créala en aistudio.google.com/apikey. Se guarda cifrada en este equipo y no se vuelve a mostrar.',
+        keyPlaceholder: 'Pega aquí tu clave',
+        keySet: 'Clave guardada',
+        save: 'Guardar y probar',
+        saving: 'Probando…',
+        test: 'Probar de nuevo',
+        testOk: 'Funciona: Gemini aceptó la clave y el modelo.',
+        remove: 'Quitar clave',
+        enabled: 'Resumen escrito por la IA',
+        enabledHint: 'Una sola consulta por resumen. Sin clave no se puede activar.',
+        model: 'Modelo',
+        modelHint:
+          'Gemini cambia sus modelos seguido. Si deja de funcionar, cambia el nombre por uno vigente en ai.google.dev/gemini-api/docs/models.',
+        reads: 'Qué puede leer la IA',
+        readsDefault:
+          'Siempre: títulos y horas de tus reuniones, y títulos, prioridad y vencimiento de tus tareas de ClickUp. De los correos y Slack solo las cantidades.',
+        sendMail: 'Asuntos y remitentes de Gmail',
+        sendMailHint: 'Deja que la IA los lea para hablar de tus correos.',
+        sendSlack: 'Mensajes de Slack',
+        sendSlackHint: 'Deja que la IA lea tus menciones y mensajes directos.',
+        masked: 'Antes de enviar se ocultan claves, correos, tarjetas y documentos.',
+        topicsTitle: 'Qué quieres que traiga',
+        topicsHint:
+          'El tono y el formato son fijos. Aquí eliges qué incluye el resumen: quita lo que no quieras con la ✕, o añade algo tuyo. Lo que quitas no se envía a la IA.',
+        topicsPlaceholder: 'Algo más que quieras que traiga',
+        topicsAdd: 'Añadir',
+        topicsRemove: 'Quitar',
+        topicsRestore: 'Volver a poner',
+        topicsRemoved: 'Quitados',
+        topicsExtras: 'Añadidos por ti',
+        topicsExtrasHint:
+          'La IA solo puede hablar de lo que ya tiene (reuniones, tareas, correos y mensajes). Sirve para pedirle un enfoque, por ejemplo "destaca lo que vence esta semana".',
+        topicsReset: 'Volver a los de siempre',
+        errors: {
+          auth: 'Google no aceptó esa clave. Revisa que la hayas copiado completa.',
+          model: 'Ese modelo no está disponible con tu clave. Cambia el nombre del modelo.',
+          quota: 'Se alcanzó el límite de uso gratuito. Prueba de nuevo en un rato.',
+          network: 'No se pudo conectar con Gemini. Revisa tu conexión.',
+          bad_response: 'Gemini respondió algo que no se pudo usar. Prueba de nuevo.',
+          secure: 'Este equipo no permite guardar la clave de forma segura.',
+          generic: 'No se pudo comprobar la clave. Prueba de nuevo.'
+        }
+      }
     },
     schedule: {
       workHours: 'Horario laboral',
@@ -348,7 +421,73 @@ export const strings = {
     meetingSoon: 'Reunión por empezar',
     summary: (n: number): string => `Tienes ${n} pendientes importantes`
   },
+  briefing: {
+    title: 'Resumen del día',
+    greeting: (hour: number, name: string): string => {
+      const salute = hour < 12 ? 'Buen día' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'
+      return name ? `${salute}, ${name}` : salute
+    },
+    // The sentence under the greeting when there is no AI: built from the counts.
+    intro: (c: { meetings: number; priorities: number; urgent: number }): string => {
+      const parts: string[] = []
+      if (c.meetings > 0) {
+        parts.push(c.meetings === 1 ? 'Hoy tienes 1 reunión' : `Hoy tienes ${c.meetings} reuniones`)
+      }
+      if (c.priorities > 0) {
+        const p = c.priorities === 1 ? '1 prioridad' : `${c.priorities} prioridades`
+        parts.push(c.meetings > 0 ? p : `Hoy tienes ${p}`)
+      }
+      if (parts.length === 0) return 'Hoy no tienes nada pendiente. ¡Buen día libre!'
+      const text = parts.join(' y ')
+      return c.urgent > 0
+        ? `${text}; ${c.urgent === 1 ? '1 es urgente' : `${c.urgent} son urgentes`}.`
+        : `${text}.`
+    },
+    meetings: 'Reuniones de hoy',
+    priorities: 'Prioridades principales',
+    nextTasks: 'Próximas tareas',
+    yesterday: 'Quedó pendiente de ayer',
+    waiting: 'Esperando respuesta',
+    since: 'Desde el último resumen',
+    sinceText: (emails: number, messages: number): string => {
+      const parts: string[] = []
+      if (emails > 0) parts.push(emails === 1 ? '1 correo nuevo' : `${emails} correos nuevos`)
+      if (messages > 0) {
+        parts.push(messages === 1 ? '1 mensaje de Slack' : `${messages} mensajes de Slack`)
+      }
+      return parts.join(' y ')
+    },
+    join: 'Unirse',
+    open: 'Abrir',
+    // The small links under a paragraph written by the AI: one per item it talks about.
+    link: (kind: 'meeting' | 'task' | 'email' | 'message' | 'followup'): string =>
+      kind === 'meeting'
+        ? 'Ver reunión'
+        : kind === 'task'
+          ? 'Ver tarea'
+          : kind === 'email'
+            ? 'Ver correo'
+            : kind === 'followup'
+              ? 'Ver hilo'
+              : 'Ver mensaje',
+    details: 'Ver todo el detalle',
+    hideDetails: 'Ocultar el detalle',
+    urgent: 'Urgente',
+    due: (label: string): string => `vence ${label}`,
+    overdue: 'vencida',
+    generatedAt: (time: string, mode: 'rules' | 'ai'): string =>
+      mode === 'ai' ? `Generado a las ${time} con IA` : `Generado a las ${time}`,
+    update: 'Actualizar',
+    updating: 'Actualizando…',
+    done: 'Entendido',
+    close: 'Cerrar',
+    empty: 'Todavía no hay un resumen para mostrar.'
+  },
   onboarding: {
+    nameTitle: '¿Cómo te llamas?',
+    nameText:
+      'Lo usamos para saludarte en el resumen diario: "Buen día, Ana". Puedes cambiarlo después en Ajustes.',
+    namePlaceholder: 'Tu nombre',
     welcomeTitle: 'Bienvenido',
     welcomeText:
       'Conecta tus cuentas para ver aquí lo que necesita tu atención. Puedes saltar cualquiera.',

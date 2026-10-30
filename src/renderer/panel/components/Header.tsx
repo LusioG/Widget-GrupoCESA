@@ -1,11 +1,12 @@
 import { strings } from '@shared/strings'
 import logo from '@renderer/assets/logo-circle.png'
 import { DotsArc } from '@renderer/components/DotsArc'
-import { ChevronLeftIcon, XIcon } from '@renderer/components/icons'
+import { ChevronLeftIcon, FileTextIcon, XIcon } from '@renderer/components/icons'
 
 type Props = {
   title: string
   subtitle?: string
+  onBriefing?: () => void
   onSettings?: () => void
   onBack?: () => void
 }
@@ -13,7 +14,13 @@ type Props = {
 const iconButton =
   'flex size-8 cursor-pointer items-center justify-center rounded-full text-cesa-mute transition hover:bg-cesa-700 hover:text-cesa-green'
 
-export function Header({ title, subtitle, onSettings, onBack }: Props): React.JSX.Element {
+export function Header({
+  title,
+  subtitle,
+  onBriefing,
+  onSettings,
+  onBack
+}: Props): React.JSX.Element {
   return (
     <header className="relative overflow-hidden border-b border-cesa-green/20 bg-gradient-to-br from-cesa-950 via-cesa-900 to-cesa-800 px-4 py-3">
       <DotsArc className="pointer-events-none absolute -top-6 -right-6 size-32 text-cesa-green opacity-10" />
@@ -34,6 +41,17 @@ export function Header({ title, subtitle, onSettings, onBack }: Props): React.JS
           <h1 className="truncate text-base font-semibold text-cesa-ink">{title}</h1>
           {subtitle && <p className="truncate text-xs text-cesa-mute">{subtitle}</p>}
         </div>
+        {onBriefing && (
+          <button
+            type="button"
+            onClick={onBriefing}
+            className={iconButton}
+            title={strings.panel.briefing}
+            aria-label={strings.panel.briefing}
+          >
+            <FileTextIcon className="size-5" />
+          </button>
+        )}
         {onSettings && (
           <button
             type="button"

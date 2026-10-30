@@ -1,5 +1,5 @@
 import { strings } from '@shared/strings'
-import { Card, TextField, Toggle } from '@renderer/components/ui'
+import { Card, TimeField, Toggle } from '@renderer/components/ui'
 import { playNotificationSound } from '@renderer/components/sound'
 import { useAppStore } from '@renderer/store/useAppStore'
 
@@ -46,22 +46,22 @@ export function Schedule(): React.JSX.Element {
         <div>
           <h3 className="mb-2 text-sm text-cesa-ink">{s.workHours}</h3>
           <div className="flex items-center gap-3 text-xs text-cesa-mute">
-            <label className="flex-1 space-y-1">
+            <div className="flex-1 space-y-1">
               {s.from}
-              <TextField
-                type="time"
+              <TimeField
+                label={s.from}
                 value={schedule.workStart}
-                onChange={(e) => e.target.value && update({ workStart: e.target.value })}
+                onCommit={(workStart) => void update({ workStart })}
               />
-            </label>
-            <label className="flex-1 space-y-1">
+            </div>
+            <div className="flex-1 space-y-1">
               {s.to}
-              <TextField
-                type="time"
+              <TimeField
+                label={s.to}
                 value={schedule.workEnd}
-                onChange={(e) => e.target.value && update({ workEnd: e.target.value })}
+                onCommit={(workEnd) => void update({ workEnd })}
               />
-            </label>
+            </div>
           </div>
         </div>
         <div>

@@ -24,5 +24,14 @@ export const IPC = {
   itemUndo: 'item:undo',
   syncRefresh: 'sync:refresh',
   widgetHide: 'system:widget-hide',
+  briefingList: 'briefing:list',
+  briefingGet: 'briefing:get',
+  briefingOpen: 'briefing:open',
+  briefingRegenerate: 'briefing:regenerate',
+  briefingClose: 'briefing:close',
+  briefingShown: 'briefing:shown',
+  aiSaveKey: 'ai:save-key',
+  aiRemoveKey: 'ai:remove-key',
+  aiTest: 'ai:test',
   quitApp: 'system:quit'
 } as const

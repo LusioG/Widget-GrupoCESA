@@ -1,5 +1,6 @@
 import { powerMonitor, screen } from 'electron'
 import { restartRealtimeConnectors } from './accounts'
+import { checkBriefing } from './briefing'
 import { logInfo } from './logger'
 import { syncAll } from './scheduler'
 import { applyLayout } from './windows/apply'
@@ -18,6 +19,8 @@ function onWake(reason: string): void {
     syncAll()
     void restartRealtimeConnectors()
     applyLayout() // monitors may have changed while it slept
+    // A PC that only sleeps may wake on a new day: the daily summary can be due now.
+    void checkBriefing()
   }, NETWORK_SETTLE_MS)
 }
 
