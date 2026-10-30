@@ -1,6 +1,6 @@
 {
   "name": "widget",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Widget flotante de pendientes de Grupo CESA",
   "main": "./out/main/index.js",
   "author": "Grupo CESA",
