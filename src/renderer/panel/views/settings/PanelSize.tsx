@@ -1,6 +1,6 @@
 import { DEFAULT_PANEL, SCALE_RANGE } from '@shared/settingsSchema'
 import { strings } from '@shared/strings'
-import { Button, Card, Slider } from '@renderer/components/ui'
+import { Button, Card, Slider, Toggle } from '@renderer/components/ui'
 import { useAppStore } from '@renderer/store/useAppStore'
 
 const s = strings.settings.panel
@@ -21,6 +21,17 @@ export function PanelSize(): React.JSX.Element {
         onCommit={(scale) => window.api.settings.update({ panel: { scale } })}
       />
       <p className="text-xs text-cesa-mute">{s.hint}</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm text-cesa-ink">{s.fullHeight}</div>
+          <div className="text-xs text-cesa-mute">{s.fullHeightHint}</div>
+        </div>
+        <Toggle
+          checked={panel.fullHeight}
+          label={s.fullHeight}
+          onChange={(fullHeight) => window.api.settings.update({ panel: { fullHeight } })}
+        />
+      </div>
       <Button
         variant="ghost"
         onClick={() => window.api.settings.update({ panel: { scale: DEFAULT_PANEL.scale } })}

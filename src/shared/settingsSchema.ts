@@ -18,7 +18,7 @@ const widget = z.object({
   scale,
   opacity: z.number().min(OPACITY_RANGE.min).max(OPACITY_RANGE.max)
 })
-const panel = z.object({ scale })
+const panel = z.object({ scale, fullHeight: z.boolean() })
 const schedule = z.object({
   workStart: hhmm,
   workEnd: hhmm,
@@ -121,7 +121,7 @@ export const DEFAULT_WIDGET: Settings['widget'] = {
   scale: 1,
   opacity: 1
 }
-export const DEFAULT_PANEL: Settings['panel'] = { scale: 1 }
+export const DEFAULT_PANEL: Settings['panel'] = { scale: 1, fullHeight: false }
 
 export const DEFAULT_SETTINGS: Settings = {
   widget: DEFAULT_WIDGET,

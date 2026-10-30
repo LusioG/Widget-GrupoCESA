@@ -6,6 +6,7 @@ import { Settings } from '@renderer/panel/views/Settings'
 import { CalendarHorizon } from '@renderer/panel/views/settings/CalendarHorizon'
 import { AiSettings } from '@renderer/panel/views/settings/AiSettings'
 import { DailyBriefing } from '@renderer/panel/views/settings/DailyBriefing'
+import { PanelSize } from '@renderer/panel/views/settings/PanelSize'
 import { General } from '@renderer/panel/views/settings/General'
 import { Trash } from '@renderer/panel/views/settings/Trash'
 import { useAppStore } from '@renderer/store/useAppStore'
@@ -690,5 +691,25 @@ describe('daily summary settings', () => {
     render(<DailyBriefing />)
     const toggle = screen.getByRole('switch', { name: strings.settings.briefing.fullHeight })
     expect(toggle.getAttribute('aria-checked')).toBe('true')
+  })
+})
+
+describe('panel size settings', () => {
+  it('has a switch for the panel to take the whole height of the screen', () => {
+    setState({})
+    render(<PanelSize />)
+    const toggle = screen.getByRole('switch', { name: strings.settings.panel.fullHeight })
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(toggle)
+    expect(api.settings.update).toHaveBeenCalledWith({ panel: { fullHeight: true } })
+  })
+
+  it('says so in the settings list when it is on', () => {
+    setState({
+      settings: { ...DEFAULT_SETTINGS, panel: { ...DEFAULT_SETTINGS.panel, fullHeight: true } }
+    })
+    useAppStore.setState({ openSection: null })
+    render(<Settings />)
+    expect(screen.getByText('Tamaño 100 % · toda la altura')).toBeTruthy()
   })
 })

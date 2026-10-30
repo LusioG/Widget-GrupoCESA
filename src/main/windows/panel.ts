@@ -2,7 +2,7 @@ import { BrowserWindow, screen } from 'electron'
 import { IPC } from '../../shared/ipcChannels'
 import type { PanelView } from '../../shared/types'
 import { markPanelSeen } from '../appState'
-import { drawerLayout, placePanel } from '../geometry'
+import { drawerLayout, panelSizeFor, placePanel } from '../geometry'
 import { shouldResume } from '../panelResume'
 import { refreshStale } from '../scheduler'
 import { getSettings } from '../settingsStore'
@@ -85,11 +85,7 @@ export function isPanelOpen(): boolean {
 
 // Panel size for the screen it opens on: never larger than the work area.
 function fittedPanel(area: { width: number; height: number }): { width: number; height: number } {
-  const size = panelSize()
-  return {
-    width: Math.min(size.width, area.width - 16),
-    height: Math.min(size.height, area.height - 16)
-  }
+  return panelSizeFor(panelSize(), area, getSettings().panel.fullHeight)
 }
 
 // Tab mode: where the panel and the tab sit while the drawer is open.

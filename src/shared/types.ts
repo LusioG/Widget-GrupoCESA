@@ -64,7 +64,8 @@ export type Settings = {
     opacity: number
   }
   // The container that opens with all the information.
-  panel: { scale: number }
+  // fullHeight: the panel takes the whole usable height of the screen instead of its usual height.
+  panel: { scale: number; fullHeight: boolean }
   schedule: { workStart: string; workEnd: string; workDays: number[] }
   notifications: { enabled: boolean; focusFromCalendar: boolean; sound: boolean }
   filters: {

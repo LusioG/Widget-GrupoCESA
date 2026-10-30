@@ -49,7 +49,10 @@ const rows: Record<
     summary: ({ settings: { widget } }) =>
       widget.mode === 'tab' ? sm.widgetTab(widget.side) : sm.widgetPopup
   },
-  panel: { icon: PanelRightIcon, summary: ({ settings }) => sm.panelSize(settings.panel.scale) },
+  panel: {
+    icon: PanelRightIcon,
+    summary: ({ settings }) => sm.panelSize(settings.panel.scale, settings.panel.fullHeight)
+  },
   accounts: {
     icon: UsersIcon,
     summary: ({ accounts }) =>

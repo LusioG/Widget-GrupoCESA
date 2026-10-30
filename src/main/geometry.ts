@@ -76,6 +76,15 @@ export function snapTab(rect: Rect, area: Rect): { side: DockSide; pos: number }
   }
 }
 
+// The panel's size on a given screen: its usual size, never larger than the work area, or the whole
+// usable height when the user asked for that (to see more without scrolling). The width stays.
+export function panelSizeFor(size: Size, area: Size, fullHeight: boolean): Size {
+  return {
+    width: Math.min(size.width, area.width - 16),
+    height: fullHeight ? area.height : Math.min(size.height, area.height - 16)
+  }
+}
+
 // Drawer layout for tab mode: the panel opens flush against the screen edge and the tab rides
 // on the panel's outer side, like a drawer handle. The panel is centered on the tab's height.
 export function drawerLayout(

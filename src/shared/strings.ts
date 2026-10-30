@@ -137,7 +137,10 @@ export const strings = {
     panel: {
       size: 'Tamaño del contenedor',
       hint: 'Es la ventana que se abre con toda la información. Se aplica al soltar el control.',
-      reset: 'Restablecer'
+      reset: 'Restablecer',
+      fullHeight: 'Panel a toda la altura',
+      fullHeightHint:
+        'El panel ocupa todo el alto de la pantalla, para ver más pendientes sin desplazarte. Solo cambia el alto: el ancho sigue el tamaño de arriba.'
     },
     accounts: {
       connect: 'Conectar',
@@ -254,7 +257,8 @@ export const strings = {
       widgetPopup: 'Popup flotante',
       widgetTab: (side: 'left' | 'right'): string =>
         `Solapa vertical · ${side === 'left' ? 'izquierda' : 'derecha'}`,
-      panelSize: (scale: number): string => `Tamaño ${Math.round(scale * 100)} %`,
+      panelSize: (scale: number, fullHeight: boolean): string =>
+        `Tamaño ${Math.round(scale * 100)} %${fullHeight ? ' · toda la altura' : ''}`,
       accounts: (connected: number, total: number): string =>
         connected === 0 ? 'Ninguna conectada' : `${connected} de ${total} conectadas`,
       watch: 'Listas, etiquetas, canales y remitentes',
