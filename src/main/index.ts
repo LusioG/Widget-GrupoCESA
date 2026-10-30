@@ -1,8 +1,9 @@
 import { app, BrowserWindow, Notification, session } from 'electron'
+import { join } from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { strings } from '../shared/strings'
 import { initAccounts, startRealtimeConnectors } from './accounts'
-import { initInbox, onStateChange, setSourceSignals, startTicker } from './appState'
+import { initInbox, onStateChange, setAppVersion, setSourceSignals, startTicker } from './appState'
 import { initBriefings, startBriefing, stopBriefing } from './briefing'
 import { closeDb, initDb, wasDatabaseReset } from './db/client'
 import { buildFakeSignals } from './fakeData'
@@ -15,6 +16,7 @@ import { startScheduler } from './scheduler'
 import { getSettings, initSettings } from './settingsStore'
 import { registerSystemEvents } from './system'
 import { createTray, refreshTrayMenu } from './tray'
+import { startUpdater, stopUpdater } from './updater'
 import { createBadgeWindow, getBadgeWindow } from './windows/badge'
 import { createBriefingWindow } from './windows/briefing'
 import { startTabRows } from './windows/tabRows'
@@ -22,6 +24,13 @@ import { createPanelWindow, openPanel } from './windows/panel'
 
 // Wait a little after launch before the first sync so startup stays quiet.
 const FIRST_SYNC_DELAY_MS = 15_000
+
+// Where each person's accounts, settings and summaries live. It is fixed to %APPDATA%\widget
+// instead of following the product name, so the installer, an update or a rename of the product can
+// never leave the data behind. Tests pass their own `--user-data-dir`, which is respected.
+if (!app.commandLine.hasSwitch('user-data-dir')) {
+  app.setPath('userData', join(app.getPath('appData'), 'widget'))
+}
 
 // An unexpected error must not take the widget down or leave it in a broken state: log it
 // (without sensitive data) and keep running.
@@ -60,6 +69,7 @@ if (!app.requestSingleInstanceLock()) {
         optimizer.watchWindowShortcuts(window)
       })
 
+      setAppVersion(app.getVersion())
       logInfo('app', `starting v${app.getVersion()}`)
       await initDb()
       await initSettings()
@@ -94,6 +104,7 @@ if (!app.requestSingleInstanceLock()) {
       }
       startNotifier()
       startBriefing()
+      startUpdater()
       startTicker()
       applyHotkey()
       startPresence()
@@ -115,6 +126,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('will-quit', () => {
     releaseHotkey()
     stopBriefing()
+    stopUpdater()
     stopPresence()
     closeDb()
   })

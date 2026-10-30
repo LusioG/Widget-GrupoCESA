@@ -9,13 +9,17 @@ import { Trash } from '@renderer/panel/views/settings/Trash'
 import { useAppStore } from '@renderer/store/useAppStore'
 import { DEFAULT_SETTINGS } from '@shared/settingsSchema'
 import { strings } from '@shared/strings'
-import type { AccountInfo, AppState, Signal, Source } from '@shared/types'
+import type { AccountInfo, AppState, Signal, Source, UpdateCheckResult } from '@shared/types'
 
 const api = {
   openExternal: vi.fn(async () => undefined),
   settings: { update: vi.fn(async () => undefined) },
   items: { act: vi.fn(async () => undefined), undo: vi.fn(async () => true) },
   sync: { refresh: vi.fn(async () => undefined) },
+  update: {
+    check: vi.fn(async (): Promise<UpdateCheckResult> => 'latest'),
+    install: vi.fn(async () => undefined)
+  },
   system: {
     setAutostart: vi.fn(async () => undefined),
     setFocus: vi.fn(async () => undefined),
@@ -69,6 +73,8 @@ const setState = (over: Partial<AppState> = {}): void =>
       accounts: accounts(),
       googleHasCredentials: false,
       aiKeySet: false,
+      appVersion: '1.0.0',
+      updateReady: null,
       autostart: false,
       ...over
     }
@@ -609,5 +615,29 @@ describe('meetings: dismiss, filter and trash', () => {
     setState()
     render(<Trash />)
     expect(screen.getByText(strings.settings.trash.empty)).toBeTruthy()
+  })
+})
+
+describe('updates', () => {
+  it('offers to restart only while a new version is ready', () => {
+    setState({ updateReady: null })
+    const { unmount } = render(<Home />)
+    expect(screen.queryByText(strings.update.restart)).toBeNull()
+    unmount()
+
+    setState({ updateReady: '1.2.0' })
+    render(<Home />)
+    expect(screen.getByText(strings.update.ready('1.2.0'))).toBeTruthy()
+    fireEvent.click(screen.getByText(strings.update.restart))
+    expect(api.update.install).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the version and looks for updates on request', async () => {
+    setState({ appVersion: '1.0.0' })
+    render(<General />)
+    expect(screen.getByText('Versión 1.0.0')).toBeTruthy()
+    fireEvent.click(screen.getByText(strings.update.check))
+    expect(await screen.findByText(strings.update.result.latest)).toBeTruthy()
+    expect(api.update.check).toHaveBeenCalled()
   })
 })

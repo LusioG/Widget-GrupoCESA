@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { acceleratorFromEvent, formatAccelerator } from '@shared/accelerator'
 import { strings } from '@shared/strings'
+import type { UpdateCheckResult } from '@shared/types'
 import { Button, Card, Toggle } from '@renderer/components/ui'
 import { useAppStore } from '@renderer/store/useAppStore'
 
@@ -73,6 +74,38 @@ function HotkeyField(): React.JSX.Element {
   )
 }
 
+// The version in use, and a button to look for a newer one now (it also looks by itself).
+function VersionCard(): React.JSX.Element {
+  const version = useAppStore((st) => st.state?.appVersion ?? '')
+  const [checking, setChecking] = useState(false)
+  const [result, setResult] = useState<UpdateCheckResult | null>(null)
+
+  const check = async (): Promise<void> => {
+    setChecking(true)
+    setResult(null)
+    try {
+      setResult(await window.api.update.check())
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  return (
+    <Card className="space-y-2">
+      <Row title={strings.update.version(version)} hint={strings.update.versionHint}>
+        <Button variant="ghost" disabled={checking} onClick={() => void check()}>
+          {checking ? strings.update.checking : strings.update.check}
+        </Button>
+      </Row>
+      {result && (
+        <p role="status" className="text-xs text-cesa-mute">
+          {strings.update.result[result]}
+        </p>
+      )}
+    </Card>
+  )
+}
+
 export function General(): React.JSX.Element {
   const autostart = useAppStore((st) => st.state?.autostart ?? false)
   const settings = useAppStore((st) => st.state?.settings)
@@ -82,6 +115,8 @@ export function General(): React.JSX.Element {
 
   return (
     <div className="space-y-3">
+      <VersionCard />
+
       <Card>
         <Row title={s.autostart} hint={s.autostartHint}>
           {/* The value comes from the real system state, re-read after every change. */}

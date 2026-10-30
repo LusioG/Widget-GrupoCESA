@@ -34,6 +34,7 @@ import {
 } from '../briefing'
 import { applyHotkey } from '../hotkey'
 import { refreshAll } from '../scheduler'
+import { checkForUpdatesNow, installUpdateNow } from '../updater'
 import { getSettings, updateSettings } from '../settingsStore'
 import { applyLayout } from '../windows/apply'
 import { registerBadgeGestures } from '../windows/badge'
@@ -151,6 +152,9 @@ export function registerIpc(): void {
   })
 
   ipcMain.on(IPC.panelClose, () => closePanel())
+
+  ipcMain.handle(IPC.updateCheck, () => checkForUpdatesNow())
+  ipcMain.handle(IPC.updateInstall, () => installUpdateNow())
 
   ipcMain.handle(IPC.briefingList, () => listBriefings())
   ipcMain.handle(IPC.briefingGet, (_event, raw) => {

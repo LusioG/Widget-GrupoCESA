@@ -1,30 +1,67 @@
-appId: com.electron.app
-productName: widget
+# Packaging: a per-user Windows installer (no administrator rights needed) that updates itself from
+# GitHub Releases. How to publish a new version is in README.md ("Publicar una versión").
+
+# This id is the identity of the app on Windows (installer, updates, notifications). It must match
+# `setAppUserModelId` in src/main/index.ts, and it must not change once people have installed it:
+# a different id is a different app, and the update would not replace the old one.
+appId: com.grupocesa.widget
+productName: Widget GrupoCESA
+copyright: Grupo CESA
+
 directories:
   buildResources: build
+
 files:
+  # Start from everything, then take out what does not run: only the compiled app (out/) and the
+  # dependencies stay. The first line is needed because the list has an include (the migrations
+  # below): once a list has one, electron-builder stops adding "everything" by itself.
+  - '**/*'
   - '!**/.vscode/*'
-  - '!src/*'
+  - '!src/**'
+  - '!{tests,docs}/**'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{vitest.config.ts,drizzle.config.ts,.editorconfig}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CLAUDE.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  # ...except the database migrations: the app reads them from here when it starts, and the
+  # `!src/**` above would otherwise leave them out (the installed app could not open its database).
+  - 'src/main/db/migrations/**'
 asarUnpack:
   - resources/**
+
 win:
   executableName: widget
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  # One click, for the current user only: no wizard and no administrator prompt, so it can be put on
+  # anyone's PC. The same installer runs silently when an update is applied.
+  oneClick: true
+  perMachine: false
+  runAfterFinish: true
+  # So a widget that was closed can be opened again: from the desktop or from the Start menu.
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
+  # Uninstalling never deletes the user's accounts, settings or summaries.
+  deleteAppDataOnUninstall: false
+  artifactName: ${name}-${version}-setup.${ext}
+
+# Updates come from the releases of a separate public repository that holds only the installers, so
+# the source code can stay private. The installed app needs no token to read it.
+publish:
+  provider: github
+  owner: LusioG
+  repo: Widget-GrupoCESA-releases
+  releaseType: release
+
 mac:
   entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
@@ -38,6 +75,3 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates

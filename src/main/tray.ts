@@ -2,6 +2,7 @@ import { app, Menu, nativeImage, Tray } from 'electron'
 import trayIcon from '../../resources/tray.png?asset'
 import { strings } from '../shared/strings'
 import {
+  getUpdateReady,
   isManualFocus,
   isManualHidden,
   isPaused,
@@ -10,12 +11,16 @@ import {
   setPaused
 } from './appState'
 import { openBriefing } from './briefing'
+import { installUpdateNow } from './updater'
 import { openPanel, togglePanel } from './windows/panel'
 
 let tray: Tray | null = null
 
 function buildMenu(): Menu {
+  const update = getUpdateReady()
   return Menu.buildFromTemplate([
+    // Only while a new version is downloaded and waiting.
+    ...(update ? [{ label: strings.tray.update(update), click: () => installUpdateNow() }] : []),
     { label: strings.tray.openPanel, click: () => openPanel() },
     { label: strings.tray.briefing, click: () => void openBriefing() },
     {

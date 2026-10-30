@@ -76,6 +76,10 @@ const api: Api = {
       return () => ipcRenderer.removeListener(IPC.briefingShown, listener)
     }
   },
+  update: {
+    check: () => ipcRenderer.invoke(IPC.updateCheck),
+    install: () => ipcRenderer.invoke(IPC.updateInstall)
+  },
   ai: {
     saveKey: (key) => ipcRenderer.invoke(IPC.aiSaveKey, key),
     removeKey: () => ipcRenderer.invoke(IPC.aiRemoveKey),

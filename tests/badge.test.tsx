@@ -40,6 +40,8 @@ const stateWith = (
   },
   googleHasCredentials: false,
   aiKeySet: false,
+  appVersion: '1.0.0',
+  updateReady: null,
   autostart: false,
   ...over
 })

@@ -7,7 +7,8 @@ Stack: Electron, electron-vite, React 19, Tailwind v4 (tokens in `src/renderer/a
 ## Decisions to keep
 - Read-only integrations (ClickUp, Google Calendar/Gmail, Slack). ClickUp client exposes only GET.
 - Phase 8 (daily summary) is authorized and in progress. The AI is Gemini with the user's own key (stored in `secrets.bin`, never in settings, logs or the repo), and it is used ONLY to write the daily summary. It works without AI (rules summary is the fallback), sends the minimum by default (meeting + ClickUp titles; mail/Slack only as counts unless the user opts in per source), masks sensitive text, and records every request in `ai_audit_log`. Gemini model names change often: check docs before changing the default in `settingsSchema.ts`.
-- Work phase by phase; the user authorizes each one. Installer (electron-builder NSIS, autostart, auto-update, keep userData stable) is still pending.
+- Work phase by phase; the user authorizes each one.
+- Installer and updates (done): per-user NSIS installer (`electron-builder.yml`), auto-update with `electron-updater` from GitHub Releases of the separate public repo `LusioG/Widget-GrupoCESA-releases`. `npm run release` publishes (needs `GH_TOKEN`). NEVER change `appId` (`com.grupocesa.widget`, must equal `setAppUserModelId`): a different id is a different app and updates stop replacing it. userData is pinned to `%APPDATA%\widget` in `main/index.ts`. The `files` list must keep `'**/*'` first and the migrations include last (the installed app reads `src/main/db/migrations`); `tests/packaging.test.ts` guards this. The installer is unsigned (SmartScreen warns once).
 - Never commit or log secrets. Credentials live encrypted in `%APPDATA%\widget\secrets.bin`; logs in `%APPDATA%\widget\logs`.
 - Tests must NEVER delete `%APPDATA%\widget` or kill every electron process: use an isolated `--user-data-dir` and kill by PID.
 - The content of "Fuentes y filtros" (formerly "Qué vigilar") is not to be removed.

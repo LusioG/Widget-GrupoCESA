@@ -173,6 +173,8 @@ export type AppState = {
   accounts: Record<Source, AccountInfo>
   googleHasCredentials: boolean
   aiKeySet: boolean // a Gemini key is stored (its value never reaches the pages)
+  appVersion: string
+  updateReady: string | null // a newer version is downloaded and waits for a restart
   autostart: boolean
 }
 
@@ -202,6 +204,9 @@ export type SlackChannel = { id: string; name: string; isPrivate: boolean }
 export type GoogleFeature = 'calendar' | 'gmail'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
+
+// The answer to "Buscar actualizaciones". `unavailable`: this copy is not an installed one.
+export type UpdateCheckResult = 'latest' | 'downloading' | 'ready' | 'error' | 'unavailable'
 
 export type PanelView = 'home' | 'settings'
 

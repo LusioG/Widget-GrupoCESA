@@ -10,7 +10,8 @@ import type {
   ItemAction,
   PanelView,
   SlackChannel,
-  Source
+  Source,
+  UpdateCheckResult
 } from './types'
 
 // Typed surface exposed to the renderer as `window.api`.
@@ -72,6 +73,11 @@ export interface Api {
     fit(height: number): void
     // The main process sends the summary to show, each time the window is opened.
     onShow(cb: (briefing: Briefing) => void): () => void
+  }
+  // The widget updates itself from GitHub Releases; the pages can ask now, or apply what is ready.
+  update: {
+    check(): Promise<UpdateCheckResult>
+    install(): Promise<void> // closes, installs the downloaded version and opens the widget again
   }
   // The Gemini key (stored encrypted, never sent back to the pages).
   ai: {

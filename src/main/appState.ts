@@ -36,6 +36,8 @@ let lastSeenAt = Date.now()
 let manualHidden = false
 let presenting = false
 let hotkeyFailed = false
+let updateReady: string | null = null // the version waiting for a restart, if any
+let appVersion = '' // set once at startup (see index.ts)
 // The rows as they were before the last dismiss/snooze, so it can be undone for a few seconds.
 const UNDO_WINDOW_MS = 15_000
 let lastChange: { at: number; rows: InboxRow[] } | null = null
@@ -113,6 +115,8 @@ export function getState(): AppState {
     accounts: { ...accounts },
     googleHasCredentials: hasGoogleCredentials(),
     aiKeySet: hasSecret(GEMINI_KEY),
+    appVersion,
+    updateReady,
     autostart: getAutostart()
   }
 }
@@ -243,6 +247,19 @@ export function setPresenting(value: boolean): void {
   if (presenting === value) return
   presenting = value
   publish()
+}
+
+export function setAppVersion(version: string): void {
+  appVersion = version
+}
+
+export function setUpdateReady(version: string): void {
+  updateReady = version
+  publish()
+}
+
+export function getUpdateReady(): string | null {
+  return updateReady
 }
 
 export function setHotkeyFailed(value: boolean): void {

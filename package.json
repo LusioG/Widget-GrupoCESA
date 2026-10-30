@@ -1,10 +1,9 @@
 {
   "name": "widget",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "Widget flotante de pendientes de Grupo CESA",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "Grupo CESA",
   "scripts": {
     "format": "prettier --write .",
     "test": "vitest run",
@@ -17,7 +16,8 @@
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "install-electron && electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
+    "build:win": "npm run build && electron-builder --win --publish never",
+    "release": "npm run build && electron-builder --win --publish always",
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux"
   },
@@ -27,6 +27,7 @@
     "@slack/socket-mode": "^3.1.0",
     "@slack/web-api": "^8.2.0",
     "drizzle-orm": "^0.45.4",
+    "electron-updater": "^6.8.11",
     "googleapis": "^188.0.0",
     "zod": "^4.6.7",
     "zustand": "^5.0.16"

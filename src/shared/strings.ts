@@ -4,6 +4,7 @@ export const strings = {
   brand: 'GrupoCESA', // shown at the bottom of the panel
   tray: {
     tooltip: 'Grupo CESA · Pendientes',
+    update: (version: string): string => `Reiniciar para actualizar (v${version})`,
     openPanel: 'Abrir panel',
     pauseAlerts: 'Pausar alertas',
     focusMode: 'Modo foco',
@@ -258,7 +259,9 @@ export const strings = {
         connected === 0 ? 'Ninguna conectada' : `${connected} de ${total} conectadas`,
       watch: 'Listas, etiquetas, canales y remitentes',
       briefing: (enabled: boolean, time: string, ai: boolean): string =>
-        enabled ? `Cada día desde las ${time} · ${ai ? 'escrito con IA' : 'sin IA'}` : 'Desactivado',
+        enabled
+          ? `Cada día desde las ${time} · ${ai ? 'escrito con IA' : 'sin IA'}`
+          : 'Desactivado',
       schedule: (from: string, to: string, notifications: boolean): string =>
         `${from}–${to} · ${notifications ? 'avisos activos' : 'avisos apagados'}`,
       trash: (n: number): string =>
@@ -420,6 +423,22 @@ export const strings = {
       'No se pudo leer el archivo local de datos y se creó uno nuevo. Tus cuentas y ajustes pueden haberse reiniciado.',
     meetingSoon: 'Reunión por empezar',
     summary: (n: number): string => `Tienes ${n} pendientes importantes`
+  },
+  update: {
+    ready: (version: string): string =>
+      `Hay una versión nueva del widget (${version}), lista para instalar.`,
+    restart: 'Reiniciar y actualizar',
+    version: (version: string): string => `Versión ${version}`,
+    versionHint: 'El widget se actualiza solo y te avisa cuando hay una versión nueva lista.',
+    check: 'Buscar actualizaciones',
+    checking: 'Buscando…',
+    result: {
+      latest: 'Tienes la última versión.',
+      downloading: 'Hay una versión nueva. Se está descargando; te avisaremos cuando esté lista.',
+      ready: 'Ya hay una versión nueva lista. Usa "Reiniciar y actualizar".',
+      error: 'No se pudo buscar actualizaciones. Revisa tu conexión y prueba de nuevo.',
+      unavailable: 'Esta copia no es la instalada, así que no se actualiza sola.'
+    }
   },
   briefing: {
     title: 'Resumen del día',

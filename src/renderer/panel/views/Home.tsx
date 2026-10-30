@@ -227,6 +227,21 @@ export function Home(): React.JSX.Element {
               )}
             </div>
           ))}
+          {state?.updateReady && (
+            <div
+              role="status"
+              className="flex items-center gap-3 rounded-xl border border-cesa-green/40 bg-cesa-green/10 px-3 py-2 text-xs text-cesa-ink"
+            >
+              <span className="flex-1">{strings.update.ready(state.updateReady)}</span>
+              <button
+                type="button"
+                onClick={() => void window.api.update.install()}
+                className="min-h-6 cursor-pointer rounded-full bg-cesa-green px-3 py-1 font-bold text-cesa-950 hover:brightness-110"
+              >
+                {strings.update.restart}
+              </button>
+            </div>
+          )}
           {needsReconnect && (
             <div
               role="alert"

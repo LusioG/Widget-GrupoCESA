@@ -4,8 +4,9 @@ Widget flotante de escritorio (Windows) que reúne en un solo lugar lo que neces
 reuniones próximas, tareas de **ClickUp**, menciones y mensajes directos de **Slack** y correos
 relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra nada en esos servicios.
 
-> Estado: en desarrollo. Se ejecuta desde el código; el instalador todavía no existe
-> (ver [Qué falta](#qué-falta)).
+> Estado: en desarrollo. Se puede instalar con el instalador de Windows y se actualiza solo (ver
+> [Instalación y actualizaciones](#instalación-y-actualizaciones)); también se puede ejecutar desde el
+> código. Ver [Qué falta](#qué-falta).
 
 ## Qué hace
 
@@ -74,6 +75,19 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
   desde el icono de hoja del panel, la bandeja ("Ver resumen del día") o Ajustes (últimos 7 días).
   Las instrucciones para la IA se pueden personalizar en Ajustes.
 - Tamaño del widget, tamaño del panel y transparencia del widget ajustables.
+
+## Instalación y actualizaciones
+
+1. Descarga `widget-X.Y.Z-setup.exe` de las _Releases_ de
+   [`Widget-GrupoCESA-releases`](https://github.com/LusioG/Widget-GrupoCESA-releases/releases) y
+   ábrelo. Se instala solo, **sin pedir permisos de administrador**, y abre el widget al terminar.
+2. Como el instalador no está firmado, la primera vez Windows puede mostrar _"Windows protegió su
+   PC"_: pulsa **Más información → Ejecutar de todas formas**.
+3. Deja accesos directos en el **escritorio** y en el **menú de inicio**. Si cierras el widget
+   (Ajustes → Cerrar widget, o Salir en la bandeja), ábrelo de nuevo desde cualquiera de los dos.
+4. Para que se abra solo al encender el equipo, activa **Ajustes → General → Iniciar con el sistema**.
+5. **Se actualiza solo.** Ajustes → General muestra la versión y permite buscar actualizaciones.
+   Desinstalar no borra tus cuentas ni tus ajustes (están en `%APPDATA%\widget`).
 
 ## Requisitos y cómo ejecutarlo
 
@@ -239,8 +253,32 @@ Estructura: `src/main` (proceso principal: ventanas, conectores, motor de reglas
 (`node:sqlite` + Drizzle), zod y Vitest. La lista de verificación manual está en
 [`docs/MANUAL_TESTS.md`](docs/MANUAL_TESTS.md).
 
+### Publicar una versión
+
+Quien mantiene el widget publica desde su PC y todos los demás se actualizan solos. Solo se hace la
+primera vez la preparación (pasos 1 y 2).
+
+1. **Crea el repositorio de instaladores:** en GitHub, un repo **público** llamado
+   `Widget-GrupoCESA-releases` en la cuenta `LusioG`. Solo guarda los instaladores (no lleva código ni
+   claves), así que el repo del código puede ser privado.
+2. **Crea un token** en GitHub → Settings → Developer settings → Personal access tokens →
+   _Fine-grained tokens_, limitado a ese repo y con el permiso **Contents: Read and write**. Guárdalo
+   en tu equipo como variable de entorno del usuario `GH_TOKEN` (nunca en el repo).
+3. **Sube el número de versión** en `package.json` (por ejemplo de `1.0.0` a `1.0.1`):
+   `npm.cmd version patch --no-git-tag-version`. Sin un número mayor, nadie se actualiza.
+4. **Publica:** `npm.cmd run release`. Pasa las comprobaciones, compila, crea el instalador y lo sube
+   como release (`widget-X.Y.Z-setup.exe` y `latest.yml`).
+5. Haz commit del cambio de versión y súbelo al repo del código.
+
+Para probar el instalador sin publicar: `npm.cmd run build:win` deja el instalador en `dist/`.
+
+Cada widget instalado busca versiones nuevas un minuto después de abrirse y cada 4 horas. Cuando
+descarga una, avisa en el panel y en la bandeja con "Reiniciar y actualizar"; si no se pulsa, se
+instala solo la próxima vez que se cierre. Un widget cerrado se actualiza al abrirse.
+
 ## Qué falta
 
-- **Instalador** para Windows (arranque con el sistema y actualización automática).
-- Probar el resumen con IA con una clave real de Gemini y datos reales.
-- Pruebas con tus cuentas reales de Google y Slack (hasta ahora solo con servicios simulados).
+- Decidir cómo se conecta Slack para toda la oficina (hoy cada persona necesita su propia app).
+- Un solo proyecto de Google para toda la oficina (hoy cada persona crea el suyo).
+- Probar el resumen con IA con una clave real de Gemini y datos reales durante unos días.
+- Firmar el instalador con un certificado (opcional: sin firma, Windows avisa una vez al instalar).
