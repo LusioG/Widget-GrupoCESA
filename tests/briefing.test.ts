@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { buildBriefing, localDate } from '../src/main/engine/briefing'
-import { shouldShowBriefing, type BriefingGate } from '../src/main/engine/briefingPolicy'
+import {
+  manualOpenCountsAsShown,
+  shouldShowBriefing,
+  type BriefingGate
+} from '../src/main/engine/briefingPolicy'
 import { DEFAULT_SETTINGS } from '../src/shared/settingsSchema'
 import { strings } from '../src/shared/strings'
 import type { Signal } from '../src/shared/types'
@@ -184,5 +188,14 @@ describe('shouldShowBriefing', () => {
 
   it('does nothing when it is turned off', () => {
     expect(shouldShowBriefing({ ...open, enabled: false })).toBe(false)
+  })
+})
+
+describe('opening the summary by hand', () => {
+  it('takes the place of the automatic one only after the chosen time', () => {
+    const at = (h: number, m: number): Date => new Date(2026, 9, 28, h, m)
+    expect(manualOpenCountsAsShown(at(12, 25), '12:22')).toBe(true) // already past: no repeat
+    expect(manualOpenCountsAsShown(at(12, 22), '12:22')).toBe(true)
+    expect(manualOpenCountsAsShown(at(12, 0), '12:22')).toBe(false) // just looking: still due
   })
 })

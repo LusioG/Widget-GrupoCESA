@@ -135,6 +135,29 @@ export async function saveBriefing(briefing: Briefing): Promise<void> {
   }
 }
 
+// The day the daily summary last came up by itself (or was read after its time), so it does not
+// come up twice. It is not the same as "a summary exists today": opening one by hand to look at
+// it must not use up the automatic one.
+const BRIEFING_AUTO_KEY = 'briefingAutoDate'
+
+export async function loadBriefingAutoDate(): Promise<string | null> {
+  const rows = await getDb().select().from(settings).where(eq(settings.key, BRIEFING_AUTO_KEY))
+  try {
+    const value: unknown = rows[0] ? JSON.parse(rows[0].value) : null
+    return typeof value === 'string' ? value : null
+  } catch {
+    return null
+  }
+}
+
+export async function saveBriefingAutoDate(date: string): Promise<void> {
+  const value = JSON.stringify(date)
+  await getDb()
+    .insert(settings)
+    .values({ key: BRIEFING_AUTO_KEY, value })
+    .onConflictDoUpdate({ target: settings.key, set: { value } })
+}
+
 // Disconnecting wipes everything that belongs to the source.
 export async function clearSource(source: Source): Promise<void> {
   const db = getDb()

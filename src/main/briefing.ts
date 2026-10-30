@@ -5,9 +5,15 @@ import { GeminiError } from './ai/gemini'
 import { GEMINI_KEY } from './ai/key'
 import { getState } from './appState'
 import { getSecret } from './auth/secrets'
-import { loadBriefings, saveBriefing, BRIEFING_KEEP } from './db/repos'
+import {
+  loadBriefingAutoDate,
+  loadBriefings,
+  saveBriefing,
+  saveBriefingAutoDate,
+  BRIEFING_KEEP
+} from './db/repos'
 import { buildBriefing, localDate } from './engine/briefing'
-import { shouldShowBriefing } from './engine/briefingPolicy'
+import { manualOpenCountsAsShown, shouldShowBriefing } from './engine/briefingPolicy'
 import { logError, logWarn } from './logger'
 import { showBriefingWindow } from './windows/briefing'
 
@@ -17,11 +23,20 @@ const CHECK_EVERY_MS = 60_000
 const READY_AFTER_S = 45
 
 let saved: Briefing[] = [] // newest day first
+// The day the summary last came up by itself. A summary that exists is not enough to know: one
+// made by opening it by hand must not stop the automatic one.
+let autoDate: string | null = null
 let timer: NodeJS.Timeout | null = null
 let working = false
 
 export async function initBriefings(): Promise<void> {
   saved = await loadBriefings()
+  autoDate = await loadBriefingAutoDate()
+}
+
+async function markAutoShown(now: Date): Promise<void> {
+  autoDate = localDate(now.getTime())
+  await saveBriefingAutoDate(autoDate)
 }
 
 const forDate = (date?: string): Briefing | null =>
@@ -83,12 +98,27 @@ export async function regenerateBriefing(): Promise<Briefing | null> {
 // Asked by the user (panel, tray, settings): shows that day's, or today's, making it if missing.
 export async function openBriefing(date?: string): Promise<void> {
   try {
-    const wanted = date ?? localDate(Date.now())
-    const briefing = forDate(wanted) ?? (date ? null : await generate(Date.now()))
-    if (briefing) showBriefingWindow(briefing, { focus: true })
+    const now = new Date()
+    const today = localDate(now.getTime())
+    const wanted = date ?? today
+    const briefing = forDate(wanted) ?? (date ? null : await generate(now.getTime()))
+    if (!briefing) return
+    showBriefingWindow(briefing, { focus: true })
+    // Read by hand after its time: the automatic one has nothing left to say today.
+    if (wanted === today && manualOpenCountsAsShown(now, getState().settings.briefing.time)) {
+      await markAutoShown(now)
+    }
   } catch (error) {
     logError('briefing', 'could not open the summary', error)
   }
+}
+
+// The user changed the time. A time still to come arms the automatic summary again for today, so
+// it can be tried (or moved) after it already came up; a time already past leaves it as it was.
+export async function onBriefingTimeChanged(time: string): Promise<void> {
+  if (manualOpenCountsAsShown(new Date(), time) || autoDate === null) return
+  autoDate = null
+  await saveBriefingAutoDate('')
 }
 
 // Once per day, by itself: the first time the user is active after the chosen time.
@@ -103,13 +133,14 @@ export async function checkBriefing(): Promise<void> {
       enabled: state.settings.briefing.enabled && state.settings.onboardingDone,
       time: state.settings.briefing.time,
       schedule: state.settings.schedule,
-      alreadyToday: saved.some((b) => b.date === localDate(now.getTime())),
+      alreadyToday: autoDate === localDate(now.getTime()),
       idleSeconds: powerMonitor.getSystemIdleTime(),
       busy: state.paused || state.focus.active || state.presenting,
       ready: process.uptime() >= READY_AFTER_S
     }
     if (!shouldShowBriefing(gate)) return
     showBriefingWindow(await generate(now.getTime()), { focus: false })
+    await markAutoShown(now)
   } catch (error) {
     logError('briefing', 'could not show the daily summary', error)
   } finally {

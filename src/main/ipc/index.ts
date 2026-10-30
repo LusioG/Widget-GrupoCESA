@@ -25,7 +25,13 @@ import {
 } from '../appState'
 import { setAutostart } from '../autostart'
 import { deleteSecret, getSecret, setSecret } from '../auth/secrets'
-import { getBriefing, listBriefings, openBriefing, regenerateBriefing } from '../briefing'
+import {
+  getBriefing,
+  listBriefings,
+  onBriefingTimeChanged,
+  openBriefing,
+  regenerateBriefing
+} from '../briefing'
 import { applyHotkey } from '../hotkey'
 import { refreshAll } from '../scheduler'
 import { getSettings, updateSettings } from '../settingsStore'
@@ -78,6 +84,7 @@ export function registerIpc(): void {
       syncNow('gmail')
     }
     if (JSON.stringify(before.hotkey) !== JSON.stringify(next.hotkey)) applyHotkey()
+    if (before.briefing.time !== next.briefing.time) void onBriefingTimeChanged(next.briefing.time)
     // A different number of days starts a new read of the calendar right away.
     if (before.calendar.daysAhead !== next.calendar.daysAhead) syncNow('calendar')
     publish()
