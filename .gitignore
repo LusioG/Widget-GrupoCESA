@@ -1,0 +1,19 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.log*
+.env
+.vite
+coverage
+
+# Never commit secrets or local data
+.env.*
+!.env.example
+secrets.bin
+*.db
+*.sqlite
+*.pem
+*.key
+e2e-userdata*
