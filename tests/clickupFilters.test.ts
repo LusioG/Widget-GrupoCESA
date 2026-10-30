@@ -35,6 +35,11 @@ describe('due window', () => {
     expect(isRelevantTask(task(due(0.5)), now, cfg({ dueWindowDays: 1 }))).toBe(true)
   })
 
+  it('reaches up to three months ahead', () => {
+    expect(isRelevantTask(task(due(80)), now, cfg({ dueWindowDays: 90 }))).toBe(true)
+    expect(isRelevantTask(task(due(80)), now, cfg({ dueWindowDays: 30 }))).toBe(false)
+  })
+
   it('overdue tasks are always inside the window', () => {
     expect(isRelevantTask(task(due(-40)), now, cfg({ dueWindowDays: 1 }))).toBe(true)
   })

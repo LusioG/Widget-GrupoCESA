@@ -220,7 +220,7 @@ export const strings = {
       stopIgnoring: 'No ignorar ninguno',
       tasksTitle: 'Qué tareas mostrar',
       due: 'Vencimiento',
-      dueOptions: { 3: '3 días', 7: '7 días', 14: '14 días', 30: '30 días' },
+      dueOptions: { 3: '3 días', 7: '7 días', 14: '14 días', 30: '30 días', 90: '3 meses' },
       minPriority: 'Prioridad mínima',
       minPriorityOptions: {
         any: 'Cualquiera',
@@ -287,7 +287,7 @@ export const strings = {
         'Pocas y filtradas: urgentes, mensajes directos y reuniones por empezar. Solo en horario laboral.',
       sound: 'Sonido de notificación',
       soundHint:
-        'Suena con cada novedad que merezca aviso (horario, pausa y foco), aunque las notificaciones del sistema estén apagadas.',
+        'Suena con cada correo o mensaje de Slack nuevo, también los no urgentes, y con lo urgente y las reuniones por empezar. Respeta horario, pausa y foco, aunque las notificaciones del sistema estén apagadas.',
       focusFromCalendar: 'Foco automático con bloques "Focus"',
       focusFromCalendarHint:
         'Mientras dure un evento llamado "Focus" del calendario solo avisan los urgentes.',

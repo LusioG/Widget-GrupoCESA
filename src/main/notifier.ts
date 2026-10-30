@@ -3,7 +3,12 @@ import { IPC } from '../shared/ipcChannels'
 import { strings } from '../shared/strings'
 import type { AppState, Signal } from '../shared/types'
 import { getState, onStateChange } from './appState'
-import { shouldNotify, startupHandledIds } from './engine/notifyPolicy'
+import {
+  shouldNotify,
+  shouldSound,
+  startupHandledIds,
+  startupSoundIds
+} from './engine/notifyPolicy'
 import { getBadgeWindow } from './windows/badge'
 import { openPanel } from './windows/panel'
 
@@ -11,6 +16,8 @@ const MAX_INDIVIDUAL = 3
 
 // Ids already handled, so each item notifies at most once.
 const handled = new Set<string>()
+// Ids that already made a sound.
+const soundHandled = new Set<string>()
 
 function show(title: string, body: string): void {
   if (!Notification.isSupported()) return
@@ -40,11 +47,15 @@ function onState(state: AppState): void {
     workTime: !state.outsideHours,
     focus: state.focus.active
   }
+  // Separate sets: an ordinary mail that already sounded can still notify later if it turns urgent.
+  const sounding = state.signals.filter((s) => !soundHandled.has(s.id) && shouldSound(s, ctx, now))
+  sounding.forEach((s) => soundHandled.add(s.id))
+  // No sound while the user is presenting or has something full screen.
+  if (sounding.length > 0 && state.settings.notifications.sound && !state.presenting) playSound()
+
   const due = state.signals.filter((s) => !handled.has(s.id) && shouldNotify(s, ctx, now))
   if (due.length === 0) return
   due.forEach((s) => handled.add(s.id))
-  // No sound while the user is presenting or has something full screen.
-  if (state.settings.notifications.sound && !state.presenting) playSound()
   if (!state.settings.notifications.enabled) return
 
   // After a quiet period many items can pile up: send one summary instead of a burst.
@@ -60,6 +71,8 @@ function onState(state: AppState): void {
 
 // What was already announceable at startup is not announced again; see startupHandledIds.
 export function startNotifier(): void {
-  startupHandledIds(getState().signals, Date.now()).forEach((id) => handled.add(id))
+  const signals = getState().signals
+  startupHandledIds(signals, Date.now()).forEach((id) => handled.add(id))
+  startupSoundIds(signals, Date.now()).forEach((id) => soundHandled.add(id))
   onStateChange(onState)
 }

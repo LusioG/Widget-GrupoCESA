@@ -46,8 +46,9 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
 - **Modo foco / No molestar:** silencia lo no urgente; también se activa solo durante un evento
   llamado "Focus" del calendario.
 - **Notificaciones del sistema** pocas y filtradas, solo en horario laboral. Cada aviso nuevo va
-  acompañado de un **sonido** (una vez por tanda, aunque lleguen varios a la vez). Respeta las mismas
-  reglas que la notificación (horario, pausa y modo foco) y se apaga en **Ajustes → Notificaciones y
+  acompañado de un **sonido** (una vez por tanda, aunque lleguen varios a la vez). El sonido también
+  suena con los **correos y mensajes de Slack no urgentes** que llegan nuevos (la notificación del
+  sistema sigue siendo solo para lo importante). Respeta horario, pausa y modo foco y se apaga en **Ajustes → Notificaciones y
   horarios → Sonido de notificación**, y es independiente de las notificaciones del sistema (puedes
   tener sonido sin ventanita o al revés). El archivo es `src/renderer/assets/notification.mp3`.
 - **Fuentes y filtros** (Ajustes) reúne lo que se muestra de cada fuente: listas de ClickUp,
@@ -106,7 +107,7 @@ En **Ajustes → Fuentes y filtros** lo afinas:
 - **Listas:** se agrupan como en ClickUp (espacio → carpeta → lista). Marcas una lista, una carpeta
   o un espacio entero, o buscas por nombre (ignora mayúsculas y acentos) y pulsas
   _Seleccionar visibles_. Sin ninguna marcada se vigilan todas.
-- **Vencimiento:** 3, 7, 14 o 30 días.
+- **Vencimiento:** 3, 7, 14, 30 días o 3 meses.
 - **Prioridad mínima:** cualquiera, Normal o más, Alta o más, o solo Urgente.
 - **Mostrar siempre las Urgentes y Altas**, aunque venzan más adelante o no tengan fecha.
 - **Incluir subtareas**, o no.

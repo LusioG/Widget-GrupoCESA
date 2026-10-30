@@ -397,7 +397,7 @@ function ClickUpTasks({
           label={s.due}
           value={cfg.dueWindowDays}
           onChange={(dueWindowDays) => update({ dueWindowDays })}
-          options={([3, 7, 14, 30] as const).map((d) => ({ value: d, label: s.dueOptions[d] }))}
+          options={([3, 7, 14, 30, 90] as const).map((d) => ({ value: d, label: s.dueOptions[d] }))}
         />
       </Field>
 
