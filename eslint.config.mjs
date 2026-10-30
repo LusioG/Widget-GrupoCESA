@@ -6,7 +6,8 @@ import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
 
 export default defineConfig(
-  { ignores: ['**/node_modules', '**/dist', '**/out'] },
+  // scripts/ holds plain Node tools (the release command), outside the app's TypeScript code.
+  { ignores: ['**/node_modules', '**/dist', '**/out', 'scripts'] },
   tseslint.configs.recommended,
   eslintPluginReact.configs.flat.recommended,
   eslintPluginReact.configs.flat['jsx-runtime'],

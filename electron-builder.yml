@@ -18,7 +18,7 @@ files:
   - '**/*'
   - '!**/.vscode/*'
   - '!src/**'
-  - '!{tests,docs}/**'
+  - '!{tests,docs,scripts}/**'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{vitest.config.ts,drizzle.config.ts,.editorconfig}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CLAUDE.md}'

@@ -266,8 +266,9 @@ primera vez la preparación (pasos 1 y 2).
    en tu equipo como variable de entorno del usuario `GH_TOKEN` (nunca en el repo).
 3. **Sube el número de versión** en `package.json` (por ejemplo de `1.0.0` a `1.0.1`):
    `npm.cmd version patch --no-git-tag-version`. Sin un número mayor, nadie se actualiza.
-4. **Publica:** `npm.cmd run release`. Pasa las comprobaciones, compila, crea el instalador y lo sube
-   como release (`widget-X.Y.Z-setup.exe` y `latest.yml`).
+4. **Publica:** `npm.cmd run release`. Crea la release en GitHub, compila (con las comprobaciones),
+   genera el instalador y lo sube (`widget-X.Y.Z-setup.exe` y `latest.yml`). La release se crea antes de
+   subir los archivos para que la subida en paralelo no se pise a sí misma.
 5. Haz commit del cambio de versión y súbelo al repo del código.
 
 Para probar el instalador sin publicar: `npm.cmd run build:win` deja el instalador en `dist/`.
