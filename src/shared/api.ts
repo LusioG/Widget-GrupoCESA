@@ -68,6 +68,8 @@ export interface Api {
     open(date?: string): Promise<void> // shows that day's, or today's (made now if missing)
     regenerate(): Promise<Briefing | null> // rebuilds today's with the data of now
     close(): void
+    // The page tells how tall its content is, so the window is no taller than it needs to be.
+    fit(height: number): void
     // The main process sends the summary to show, each time the window is opened.
     onShow(cb: (briefing: Briefing) => void): () => void
   }

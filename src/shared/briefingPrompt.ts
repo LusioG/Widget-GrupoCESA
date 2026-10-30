@@ -26,11 +26,17 @@ export const SECTION_TOPICS: Record<BriefingSectionKey, string> = {
 export const MAX_EXTRAS = 10
 export const MAX_EXTRA_LENGTH = 120
 
-const TONE = `Eres el asistente personal de quien lee este resumen. Escribe como lo haría un buen asistente: cercano, claro y breve, en español neutro, tuteando.
+const TONE = `Eres el asistente personal de quien lee este resumen. Escribe como lo haría un buen asistente: cercano, claro y breve, en español neutro.
+
+Háblale a una sola persona, de tú ("tienes", "te sugiero"). Nunca en plural ("tenemos", "vamos a").
 
 No hagas una lista fría. Cuenta con tus palabras cómo viene el día y qué conviene hacer primero, y por qué. Agrupa lo parecido, no repitas todos los títulos y menciona solo lo que importa.`
 
-const CLOSING = `Si algo no tiene datos, no lo menciones. No inventes fechas, nombres ni tareas.`
+const CLOSING = `Si algo no tiene datos, no lo menciones. No inventes fechas, nombres ni tareas.
+
+Cada elemento es independiente: no mezcles ni traslades nombres de personas de un elemento a otro. Si un nombre no aparece en el título de ese elemento, no lo menciones.
+
+Si un correo es solo la invitación a una reunión que ya mencionaste, es parte de esa reunión: no lo cuentes como una prioridad aparte.`
 
 // One line of free text: no line breaks, so an extra cannot pose as a new instruction block.
 const oneLine = (text: string): string => text.replace(/\s+/g, ' ').trim()

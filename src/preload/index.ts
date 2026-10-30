@@ -69,6 +69,7 @@ const api: Api = {
     open: (date) => ipcRenderer.invoke(IPC.briefingOpen, date),
     regenerate: () => ipcRenderer.invoke(IPC.briefingRegenerate),
     close: () => ipcRenderer.send(IPC.briefingClose),
+    fit: (height) => ipcRenderer.send(IPC.briefingFit, height),
     onShow: (cb) => {
       const listener = (_: unknown, briefing: Briefing): void => cb(briefing)
       ipcRenderer.on(IPC.briefingShown, listener)

@@ -35,12 +35,10 @@ export const itemActionSchema = z.discriminatedUnion('action', [
 export const sourceSchema = z.enum(['slack', 'gmail', 'calendar', 'clickup'])
 
 // A Gemini key: long enough to be real, short enough to be sane, no spaces.
-export const geminiKeySchema = z
-  .string()
-  .trim()
-  .min(20)
-  .max(256)
-  .regex(/^\S+$/)
+export const geminiKeySchema = z.string().trim().min(20).max(256).regex(/^\S+$/)
+
+// The height the summary window is asked to take: a plain number of pixels.
+export const briefingHeightSchema = z.number().finite().min(100).max(5000)
 
 // A summary is asked for by its day; without one it means the latest.
 export const briefingDateSchema = z

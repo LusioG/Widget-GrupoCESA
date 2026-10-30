@@ -121,6 +121,50 @@ describe('buildBriefing', () => {
     expect(b.since).toEqual({ emails: 1, messages: 1 })
   })
 
+  it('does not count the mail that only invites you to a meeting of today as pending', () => {
+    const meeting = sig({
+      kind: 'meeting',
+      source: 'calendar',
+      title: 'Seguimiento de temas y proyectos | Desarrollo',
+      startsAt: now + 5 * HOUR,
+      endsAt: now + 6 * HOUR
+    })
+    const invite = sig({
+      kind: 'email',
+      source: 'gmail',
+      title: 'Invitación: Seguimiento de temas y proyectos | Desarrollo Cada semana de 3pm a 4pm',
+      occurredAt: now - HOUR
+    })
+    const other = sig({ kind: 'email', source: 'gmail', title: 'Factura de octubre' })
+    const b = buildBriefing({ signals: [meeting, invite, other], name: '', now })
+    expect(b.meetings).toHaveLength(1)
+    expect(b.priorities.map((p) => p.title)).toEqual(['Factura de octubre'])
+    expect(b.since.emails).toBe(1) // only the invoice is new
+  })
+
+  it('keeps an invitation to a meeting that is not in today’s list', () => {
+    const invite = sig({ kind: 'email', source: 'gmail', title: 'Invitación: Taller de ventas' })
+    const b = buildBriefing({ signals: [invite], name: '', now })
+    expect(b.priorities).toHaveLength(1)
+  })
+
+  it('does not hide ordinary mail just because a short meeting title appears in it', () => {
+    const meeting = sig({
+      kind: 'meeting',
+      source: 'calendar',
+      title: 'Daily',
+      startsAt: now + HOUR,
+      endsAt: now + 2 * HOUR
+    })
+    const mail = sig({
+      kind: 'email',
+      source: 'gmail',
+      title: 'Invitación: daily report de ventas'
+    })
+    const b = buildBriefing({ signals: [meeting, mail], name: '', now })
+    expect(b.priorities).toHaveLength(1)
+  })
+
   it('says so when there is nothing to do', () => {
     const b = buildBriefing({ signals: [], name: 'Ana', now })
     expect(b.intro).toContain('nada pendiente')

@@ -29,6 +29,7 @@ export const IPC = {
   briefingOpen: 'briefing:open',
   briefingRegenerate: 'briefing:regenerate',
   briefingClose: 'briefing:close',
+  briefingFit: 'briefing:fit',
   briefingShown: 'briefing:shown',
   aiSaveKey: 'ai:save-key',
   aiRemoveKey: 'ai:remove-key',

@@ -244,6 +244,9 @@ function Narrative({ briefing }: { briefing: BriefingData }): React.JSX.Element 
   )
 }
 
+const SCROLL_PADDING = 40 // the py-5 around the content
+const CARD_CHROME = 18 // the p-2 margin around the card (16) and its border (2)
+
 export function Briefing(): React.JSX.Element {
   const now = useNow()
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
@@ -251,6 +254,24 @@ export function Briefing(): React.JSX.Element {
   const [showDetail, setShowDetail] = useState(false)
   const card = useRef<HTMLDivElement>(null)
   const scroller = useRef<HTMLDivElement>(null)
+  const head = useRef<HTMLElement>(null)
+  const inner = useRef<HTMLDivElement>(null)
+  const foot = useRef<HTMLElement>(null)
+
+  // Tells the main process how tall the window needs to be: header, content, footer, the padding
+  // around the content and the transparent margin and border of the card. It follows every change
+  // (a new summary, the detail being opened, the text wrapping).
+  useEffect(() => {
+    const parts = [head.current, inner.current, foot.current]
+    const report = (): void => {
+      const [h, c, f] = parts.map((el) => el?.offsetHeight ?? 0)
+      window.api.briefing.fit(Math.ceil(h + c + f + SCROLL_PADDING + CARD_CHROME))
+    }
+    const observer = new ResizeObserver(report)
+    parts.forEach((el) => el && observer.observe(el))
+    report()
+    return () => observer.disconnect()
+  }, [])
 
   // Each time the window opens the main process sends the summary to show; the one asked for at
   // load covers a page that was reloaded after a crash.
@@ -305,7 +326,10 @@ export function Briefing(): React.JSX.Element {
         aria-label={s.title}
         className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-cesa-green/25 bg-cesa-800 text-cesa-ink shadow-2xl shadow-black/60"
       >
-        <header className="relative overflow-hidden border-b border-cesa-green/20 bg-gradient-to-br from-cesa-950 via-cesa-900 to-cesa-800 px-6 pt-5 pb-4">
+        <header
+          ref={head}
+          className="relative overflow-hidden border-b border-cesa-green/20 bg-gradient-to-br from-cesa-950 via-cesa-900 to-cesa-800 px-6 pt-5 pb-4"
+        >
           <DotsArc className="pointer-events-none absolute -top-8 -right-8 size-44 text-cesa-green opacity-10" />
           <div className="relative flex items-start gap-4">
             <img
@@ -339,40 +363,45 @@ export function Briefing(): React.JSX.Element {
           </div>
         </header>
 
-        <div ref={scroller} className="cesa-scroll flex-1 space-y-5 overflow-y-auto px-6 py-5">
-          {!briefing && <p className="py-8 text-center text-sm text-cesa-mute">{s.empty}</p>}
-          {briefing && written && (
-            <>
-              <Narrative briefing={briefing} />
-              {!empty && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setShowDetail((v) => !v)}
-                    aria-expanded={showDetail}
-                    className="flex min-h-6 cursor-pointer items-center gap-1.5 text-xs font-semibold text-cesa-mute transition hover:text-cesa-green"
-                  >
-                    {showDetail ? (
-                      <ChevronDownIcon className="size-4" />
-                    ) : (
-                      <ChevronRightIcon className="size-4" />
+        <div ref={scroller} className="cesa-scroll min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div ref={inner} className="space-y-5">
+            {!briefing && <p className="py-8 text-center text-sm text-cesa-mute">{s.empty}</p>}
+            {briefing && written && (
+              <>
+                <Narrative briefing={briefing} />
+                {!empty && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowDetail((v) => !v)}
+                      aria-expanded={showDetail}
+                      className="flex min-h-6 cursor-pointer items-center gap-1.5 text-xs font-semibold text-cesa-mute transition hover:text-cesa-green"
+                    >
+                      {showDetail ? (
+                        <ChevronDownIcon className="size-4" />
+                      ) : (
+                        <ChevronRightIcon className="size-4" />
+                      )}
+                      {showDetail ? s.hideDetails : s.details}
+                    </button>
+                    {showDetail && (
+                      <div className="mt-3">
+                        <Detail briefing={briefing} now={now} />
+                      </div>
                     )}
-                    {showDetail ? s.hideDetails : s.details}
-                  </button>
-                  {showDetail && (
-                    <div className="mt-3">
-                      <Detail briefing={briefing} now={now} />
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-          {briefing && !written && <Detail briefing={briefing} now={now} />}
-          {briefing && !empty && !written && <DotsDivider />}
+                  </div>
+                )}
+              </>
+            )}
+            {briefing && !written && <Detail briefing={briefing} now={now} />}
+            {briefing && !empty && !written && <DotsDivider />}
+          </div>
         </div>
 
-        <footer className="flex items-center gap-3 border-t border-cesa-700 bg-cesa-950/60 px-6 py-3">
+        <footer
+          ref={foot}
+          className="flex items-center gap-3 border-t border-cesa-700 bg-cesa-950/60 px-6 py-3"
+        >
           <span className="min-w-0 flex-1 truncate text-xs text-cesa-mute">
             {briefing ? s.generatedAt(time.format(briefing.createdAt), briefing.mode) : ''}
           </span>

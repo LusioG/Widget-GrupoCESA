@@ -13,6 +13,11 @@ const MAX_SINCE = 3 * DAY // after a long absence "since the last summary" stops
 
 const pad = (n: number): string => String(n).padStart(2, '0')
 
+// Case and accent insensitive, so "Invitación" and "invitacion" match.
+const fold = (text: string): string => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+const INVITATION = /\b(invitaci[oó]n|invitation)\b/i
+const MIN_MEETING_TITLE = 8 // a short title such as "Daily" would match unrelated mail
+
 // The local day of a moment as YYYY-MM-DD: the key a summary is stored under.
 export function localDate(ms: number): string {
   const d = new Date(ms)
@@ -73,7 +78,18 @@ export function buildBriefing(input: BriefingInput): Briefing {
     })
     .sort((a, b) => (a.startsAt ?? a.occurredAt) - (b.startsAt ?? b.occurredAt))
 
-  const pending = signals.filter((s) => s.kind !== 'meeting' && s.kind !== 'followup')
+  // The mail that only invites you to a meeting already in the list is part of that meeting: it
+  // is not a pending item of its own.
+  const invitesToTodaysMeeting = (s: Signal): boolean =>
+    s.kind === 'email' &&
+    INVITATION.test(s.title) &&
+    meetings.some(
+      (m) => m.title.length >= MIN_MEETING_TITLE && fold(s.title).includes(fold(m.title))
+    )
+
+  const pending = signals.filter(
+    (s) => s.kind !== 'meeting' && s.kind !== 'followup' && !invitesToTodaysMeeting(s)
+  )
   const used = new Set<string>()
 
   const priorities = [...pending].sort(byImportance).slice(0, MAX_PRIORITIES)

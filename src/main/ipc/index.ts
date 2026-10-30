@@ -37,10 +37,11 @@ import { refreshAll } from '../scheduler'
 import { getSettings, updateSettings } from '../settingsStore'
 import { applyLayout } from '../windows/apply'
 import { registerBadgeGestures } from '../windows/badge'
-import { closeBriefingWindow } from '../windows/briefing'
+import { closeBriefingWindow, fitBriefingWindow } from '../windows/briefing'
 import { closePanel, isPanelOpen, openPanel, togglePanel } from '../windows/panel'
 import {
   briefingDateSchema,
+  briefingHeightSchema,
   clickupTokenSchema,
   externalUrlSchema,
   geminiKeySchema,
@@ -186,6 +187,10 @@ export function registerIpc(): void {
     return key ? checkGemini(key, getSettings().ai.model) : invalid
   })
   ipcMain.on(IPC.briefingClose, () => closeBriefingWindow())
+  ipcMain.on(IPC.briefingFit, (_event, raw) => {
+    const height = briefingHeightSchema.safeParse(raw)
+    if (height.success) fitBriefingWindow(height.data)
+  })
 
   registerBadgeGestures({
     onClick: (pressedAt) => togglePanel(pressedAt),
