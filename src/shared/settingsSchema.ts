@@ -55,7 +55,7 @@ const calendar = z.object({
 })
 const gmail = z.object({ labelIds: z.array(z.string().min(1).max(128)).max(100) })
 const profile = z.object({ name: z.string().trim().max(40) })
-const briefing = z.object({ enabled: z.boolean(), time: hhmm })
+const briefing = z.object({ enabled: z.boolean(), time: hhmm, fullHeight: z.boolean() })
 const ai = z.object({
   enabled: z.boolean(),
   model: z
@@ -143,7 +143,7 @@ export const DEFAULT_SETTINGS: Settings = {
   presentation: { autoHide: true, hideFromCapture: true },
   calendar: { daysAhead: 2, show: 'all' }, // today and tomorrow
   profile: { name: '' },
-  briefing: { enabled: true, time: '09:00' }, // the same as the default start of the work day
+  briefing: { enabled: true, time: '09:00', fullHeight: false }, // 09:00 = the default work start
   // Off until a key is added. Mail and Slack contents stay out of what the AI reads unless asked.
   ai: {
     enabled: false,

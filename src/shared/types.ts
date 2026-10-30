@@ -93,7 +93,8 @@ export type Settings = {
   // Who the daily summary greets ("Buen día, Ana"). Empty: it greets without a name.
   profile: { name: string }
   // The daily summary: it opens the first time you are active on a work day after `time`.
-  briefing: { enabled: boolean; time: string }
+  // fullHeight: the summary window takes the whole height of the screen, to read it calmly.
+  briefing: { enabled: boolean; time: string; fullHeight: boolean }
   // The AI writes the daily summary. The key itself is never a setting: it lives encrypted.
   ai: {
     enabled: boolean
@@ -109,12 +110,7 @@ export type Settings = {
 }
 
 export type BriefingSectionKey =
-  | 'meetings'
-  | 'priorities'
-  | 'nextTasks'
-  | 'yesterday'
-  | 'waiting'
-  | 'since'
+  'meetings' | 'priorities' | 'nextTasks' | 'yesterday' | 'waiting' | 'since'
 
 // A section of the summary written in words by the AI; `refs` are the items it talks about.
 export type BriefingNarrativeSection = {

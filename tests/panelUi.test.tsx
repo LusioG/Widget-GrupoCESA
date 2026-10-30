@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Home } from '@renderer/panel/views/Home'
 import { Settings } from '@renderer/panel/views/Settings'
 import { CalendarHorizon } from '@renderer/panel/views/settings/CalendarHorizon'
+import { AiSettings } from '@renderer/panel/views/settings/AiSettings'
+import { DailyBriefing } from '@renderer/panel/views/settings/DailyBriefing'
 import { General } from '@renderer/panel/views/settings/General'
 import { Trash } from '@renderer/panel/views/settings/Trash'
 import { useAppStore } from '@renderer/store/useAppStore'
@@ -16,6 +18,7 @@ const api = {
   settings: { update: vi.fn(async () => undefined) },
   items: { act: vi.fn(async () => undefined), undo: vi.fn(async () => true) },
   sync: { refresh: vi.fn(async () => undefined) },
+  briefing: { list: vi.fn(async () => []), open: vi.fn(async () => undefined) },
   update: {
     check: vi.fn(async (): Promise<UpdateCheckResult> => 'latest'),
     install: vi.fn(async () => undefined)
@@ -380,7 +383,7 @@ describe('settings list', () => {
     expect(screen.getByText('2 de 4 conectadas')).toBeTruthy()
     expect(screen.getByText('09:00–18:00 · avisos activos')).toBeTruthy()
     expect(screen.getByText('Atajo Ctrl + Alt + P')).toBeTruthy()
-    // "Resumen diario con IA" is one section now: the AI has no menu of its own.
+    // "Resumen diario" is one section: the AI has no menu of its own.
     expect(screen.getByText(strings.settings.sections.briefing)).toBeTruthy()
     expect(screen.getByText('Cada día desde las 09:00 · sin IA')).toBeTruthy()
     expect(screen.queryByText('IA')).toBeNull()
@@ -639,5 +642,53 @@ describe('updates', () => {
     fireEvent.click(screen.getByText(strings.update.check))
     expect(await screen.findByText(strings.update.result.latest)).toBeTruthy()
     expect(api.update.check).toHaveBeenCalled()
+  })
+})
+
+describe('AI settings: a key without the switch on', () => {
+  it('says the summary stays a list while the AI is off, and stops saying it once on', () => {
+    setState({
+      aiKeySet: true,
+      settings: { ...DEFAULT_SETTINGS, ai: { ...DEFAULT_SETTINGS.ai, enabled: false } }
+    })
+    const { unmount } = render(<AiSettings />)
+    expect(screen.getByText(strings.settings.briefing.ai.offHint)).toBeTruthy()
+    unmount()
+
+    setState({
+      aiKeySet: true,
+      settings: { ...DEFAULT_SETTINGS, ai: { ...DEFAULT_SETTINGS.ai, enabled: true } }
+    })
+    render(<AiSettings />)
+    expect(screen.queryByText(strings.settings.briefing.ai.offHint)).toBeNull()
+  })
+
+  it('shows nothing about it when there is no key yet', () => {
+    setState({ aiKeySet: false })
+    render(<AiSettings />)
+    expect(screen.queryByText(strings.settings.briefing.ai.offHint)).toBeNull()
+  })
+})
+
+describe('daily summary settings', () => {
+  it('has a switch for the window to take the whole height of the screen', () => {
+    setState({ settings: { ...DEFAULT_SETTINGS, briefing: { ...DEFAULT_SETTINGS.briefing } } })
+    render(<DailyBriefing />)
+    const toggle = screen.getByRole('switch', { name: strings.settings.briefing.fullHeight })
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(toggle)
+    expect(api.settings.update).toHaveBeenCalledWith({ briefing: { fullHeight: true } })
+  })
+
+  it('shows the switch on when it was chosen', () => {
+    setState({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        briefing: { ...DEFAULT_SETTINGS.briefing, fullHeight: true }
+      }
+    })
+    render(<DailyBriefing />)
+    const toggle = screen.getByRole('switch', { name: strings.settings.briefing.fullHeight })
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
   })
 })

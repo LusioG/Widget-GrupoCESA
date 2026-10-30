@@ -96,7 +96,7 @@ export function DailyBriefing(): React.JSX.Element {
   }, [])
 
   if (!settings) return <></>
-  const { enabled, time } = settings.briefing
+  const { enabled, time, fullHeight } = settings.briefing
 
   return (
     <div className="space-y-3">
@@ -132,6 +132,13 @@ export function DailyBriefing(): React.JSX.Element {
             )}
           </div>
         )}
+        <Row title={s.fullHeight} hint={s.fullHeightHint}>
+          <Toggle
+            checked={fullHeight}
+            label={s.fullHeight}
+            onChange={(next) => window.api.settings.update({ briefing: { fullHeight: next } })}
+          />
+        </Row>
       </Card>
 
       <AiSettings />

@@ -38,6 +38,7 @@ type Status = { ok: boolean; text: string } | null
 // The key is pasted once, checked against Google and stored encrypted; it is never shown again.
 function KeyCard(): React.JSX.Element {
   const keySet = useAppStore((st) => st.state?.aiKeySet ?? false)
+  const aiOn = useAppStore((st) => st.state?.settings.ai.enabled ?? false)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<Status>(null)
@@ -99,6 +100,15 @@ function KeyCard(): React.JSX.Element {
             {busy ? s.saving : s.save}
           </Button>
         </div>
+      )}
+      {/* A key that works is not enough: with the switch off the summary stays a plain list. */}
+      {keySet && !aiOn && (
+        <p
+          role="note"
+          className="rounded-lg border border-cesa-meeting/40 bg-cesa-meeting/10 px-2.5 py-1.5 text-xs text-cesa-ink"
+        >
+          {s.offHint}
+        </p>
       )}
       {status && (
         <p

@@ -111,7 +111,7 @@ export const strings = {
       panel: 'Panel de información',
       accounts: 'Cuentas',
       watch: 'Fuentes y filtros',
-      briefing: 'Resumen diario con IA',
+      briefing: 'Resumen diario',
       schedule: 'Notificaciones y horarios',
       trash: 'Papelera',
       general: 'General'
@@ -289,6 +289,9 @@ export const strings = {
       time: 'Mostrar a partir de las',
       timeHint:
         'No sale antes de esta hora. Si el equipo estaba apagado, sale la primera vez que lo usas después. Solo en tus días y horario laborales.',
+      fullHeight: 'Ventana a toda la altura',
+      fullHeightHint:
+        'El resumen ocupa todo el alto de la pantalla, para leerlo con más calma sin tener que desplazarte.',
       timeAfterWork: (end: string): string =>
         `Esa hora es después de que termina tu horario laboral (${end}), así que el resumen no saldrá. Elige una hora anterior.`,
       history: 'Resúmenes anteriores',
@@ -315,8 +318,10 @@ export const strings = {
         saving: 'Probando…',
         test: 'Probar de nuevo',
         testOk: 'Funciona: Gemini aceptó la clave y el modelo.',
+        offHint:
+          'La IA está apagada, así que el resumen sale como lista. Enciende "Escribir el resumen con IA" en la tarjeta de abajo.',
         remove: 'Quitar clave',
-        enabled: 'Resumen escrito por la IA',
+        enabled: 'Escribir el resumen con IA',
         enabledHint: 'Una sola consulta por resumen. Sin clave no se puede activar.',
         model: 'Modelo',
         modelHint:

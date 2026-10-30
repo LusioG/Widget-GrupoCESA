@@ -38,7 +38,7 @@ import { checkForUpdatesNow, installUpdateNow } from '../updater'
 import { getSettings, updateSettings } from '../settingsStore'
 import { applyLayout } from '../windows/apply'
 import { registerBadgeGestures } from '../windows/badge'
-import { closeBriefingWindow, fitBriefingWindow } from '../windows/briefing'
+import { applyBriefingLayout, closeBriefingWindow, fitBriefingWindow } from '../windows/briefing'
 import { closePanel, isPanelOpen, openPanel, togglePanel } from '../windows/panel'
 import {
   briefingDateSchema,
@@ -87,6 +87,8 @@ export function registerIpc(): void {
     }
     if (JSON.stringify(before.hotkey) !== JSON.stringify(next.hotkey)) applyHotkey()
     if (before.briefing.time !== next.briefing.time) void onBriefingTimeChanged(next.briefing.time)
+    // The summary window follows the height choice at once, even while it is open.
+    if (before.briefing.fullHeight !== next.briefing.fullHeight) applyBriefingLayout()
     // A different number of days starts a new read of the calendar right away.
     if (before.calendar.daysAhead !== next.calendar.daysAhead) syncNow('calendar')
     publish()
