@@ -181,9 +181,10 @@ export function registerIpc(): void {
     publish()
     return { ok: true }
   })
-  ipcMain.handle(IPC.aiRemoveKey, async () => {
+  ipcMain.handle(IPC.aiRemoveKey, () => {
+    // Only the key goes. The user's choice to have the summary written by the AI stays as it was,
+    // so putting a new key (changing it) works at once; without a key nothing is sent anyway.
     deleteSecret(GEMINI_KEY)
-    await updateSettings({ ai: { enabled: false } }) // no key, nothing to write the summary with
     publish()
   })
   ipcMain.handle(IPC.aiTest, async (): Promise<ActionResult> => {
