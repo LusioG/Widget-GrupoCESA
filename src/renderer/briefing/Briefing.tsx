@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { dueLabel } from '@shared/dueLabel'
+import { meetingMove, moveLabel } from '@shared/meetingMove'
 import { strings } from '@shared/strings'
 import type { Briefing as BriefingData, BriefingItem } from '@shared/types'
 import logo from '@renderer/assets/logo-circle.png'
@@ -32,17 +33,25 @@ function SectionTitle({ children }: { children: string }): React.JSX.Element {
 // Opens the original in the browser; the summary stays where it is.
 const open = (url: string): void => void window.api.openExternal(url)
 
-function Meeting({ item }: { item: BriefingItem }): React.JSX.Element {
+function Meeting({ item, now }: { item: BriefingItem; now: number }): React.JSX.Element {
   const start = item.startsAt
   const end = item.endsAt
+  const move = meetingMove(start, item.movedFrom)
   return (
     <li className="flex items-center gap-3 rounded-xl border border-cesa-700 bg-cesa-700/30 px-3 py-2.5">
       <span className="w-[5.5rem] shrink-0 text-sm font-semibold text-cesa-meeting tabular-nums">
         {start !== undefined ? time.format(start) : ''}
         {end !== undefined ? `–${time.format(end)}` : ''}
       </span>
-      <span title={item.title} className="min-w-0 flex-1 truncate text-sm text-cesa-ink">
-        {item.title}
+      <span className="min-w-0 flex-1">
+        <span title={item.title} className="block truncate text-sm text-cesa-ink">
+          {item.title}
+        </span>
+        {move && start !== undefined && (
+          <span className="block truncate text-xs font-semibold text-cesa-meeting">
+            {moveLabel(move, start, now)}
+          </span>
+        )}
       </span>
       {item.meetingUrl && (
         <button
@@ -145,7 +154,7 @@ function Detail({ briefing, now }: { briefing: BriefingData; now: number }): Rea
           <SectionTitle>{s.meetings}</SectionTitle>
           <ul className="space-y-2">
             {briefing.meetings.map((m) => (
-              <Meeting key={m.id} item={m} />
+              <Meeting key={m.id} item={m} now={now} />
             ))}
           </ul>
         </section>

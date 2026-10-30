@@ -26,6 +26,7 @@ export function buildFakeSignals(now: number): Signal[] {
       occurredAt: now,
       startsAt: now + 3 * HOUR,
       endsAt: now + 4 * HOUR,
+      movedFrom: now + 2 * HOUR, // shows the "Atrasada · antes …" tag in the demo
       meetingUrl: 'https://zoom.us'
     },
     {

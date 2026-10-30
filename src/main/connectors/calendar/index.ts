@@ -11,7 +11,7 @@ import {
   isAuthFailure,
   isFeatureConnected
 } from '../google/auth'
-import { eventToSignal, type CalendarEvent } from './mapper'
+import { eventToSignal, trackMove, type CalendarEvent } from './mapper'
 
 // A sync token keeps the window of the request that created it, so the cursor remembers the day
 // and how many days it covered: a new day or a new setting starts over.
@@ -53,6 +53,9 @@ export class CalendarConnector implements Connector {
       cursor && cursor.day === dayKey(now) && cursor.days === days ? cursor.token : undefined
 
     const cached = new Map((await ctx.loadCached()).map((s) => [s.id, s]))
+    // What was read the time before, kept even when a full sync empties `cached`, so a change of
+    // time can be told from the first time a meeting is seen.
+    const previous = new Map(cached)
 
     const fetchAll = async (incremental: boolean): Promise<string | undefined> => {
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -74,7 +77,7 @@ export class CalendarConnector implements Connector {
         })
         for (const item of (res.data.items ?? []) as CalendarEvent[]) {
           const signal = eventToSignal(item)
-          if (signal) cached.set(signal.id, signal)
+          if (signal) cached.set(signal.id, trackMove(previous.get(signal.id), signal))
           else if (item.id) cached.delete(`calendar:${item.id}`) // cancelled, declined or all-day
         }
         pageToken = res.data.nextPageToken ?? undefined

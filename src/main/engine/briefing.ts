@@ -40,6 +40,7 @@ function toItem(s: Signal): BriefingItem {
   }
   if (s.startsAt !== undefined) item.startsAt = s.startsAt
   if (s.endsAt !== undefined) item.endsAt = s.endsAt
+  if (s.movedFrom !== undefined) item.movedFrom = s.movedFrom
   if (s.meetingUrl) item.meetingUrl = s.meetingUrl
   if (s.dueAt !== undefined) item.dueAt = s.dueAt
   if (s.priority) item.priority = s.priority

@@ -422,6 +422,14 @@ export const strings = {
     databaseReset:
       'No se pudo leer el archivo local de datos y se creó uno nuevo. Tus cuentas y ajustes pueden haberse reiniciado.',
     meetingSoon: 'Reunión por empezar',
+    meetingMoved: 'Cambió el horario de una reunión',
+    meetingMovedBody: (
+      title: string,
+      direction: 'earlier' | 'later',
+      now: string,
+      before: string
+    ): string =>
+      `${title}: ${direction === 'earlier' ? 'adelantada' : 'atrasada'}, ahora a las ${now} (antes ${before})`,
     summary: (n: number): string => `Tienes ${n} pendientes importantes`
   },
   update: {

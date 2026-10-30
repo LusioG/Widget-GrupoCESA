@@ -1,4 +1,5 @@
 import { dayOffset } from '@shared/calendarWindow'
+import { meetingMove, moveLabel } from '@shared/meetingMove'
 import { strings } from '@shared/strings'
 import type { Signal } from '@shared/types'
 import { XIcon } from '@renderer/components/icons'
@@ -14,6 +15,7 @@ const time = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' 
 
 export function MeetingCard({ meeting, now, onActed }: Props): React.JSX.Element {
   const startsAt = meeting.startsAt ?? meeting.occurredAt
+  const move = meetingMove(startsAt, meeting.movedFrom)
   const minutes = Math.ceil((startsAt - now) / 60_000)
   const soon = minutes <= 10
   // Today (or already running): how long until it starts. Another day: until when it lasts, since
@@ -33,7 +35,15 @@ export function MeetingCard({ meeting, now, onActed }: Props): React.JSX.Element
         <div className="text-sm font-semibold text-cesa-ink">{time.format(startsAt)}</div>
         <div className={`text-xs ${soon ? 'text-cesa-green' : 'text-cesa-mute'}`}>{detail}</div>
       </div>
-      <div className="min-w-0 flex-1 truncate text-sm text-cesa-ink">{meeting.title}</div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm text-cesa-ink">{meeting.title}</div>
+        {/* The time changed: said in words, so it is not missed (and not only by color). */}
+        {move && (
+          <div className="truncate text-xs font-semibold text-cesa-meeting">
+            {moveLabel(move, startsAt, now)}
+          </div>
+        )}
+      </div>
       {meeting.meetingUrl && (
         <button
           type="button"

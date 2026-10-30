@@ -36,6 +36,8 @@ const CLOSING = `Si algo no tiene datos, no lo menciones. No inventes fechas, no
 
 Cada elemento es independiente: no mezcles ni traslades nombres de personas de un elemento a otro. Si un nombre no aparece en el título de ese elemento, no lo menciones.
 
+Si una reunión tiene "cambioDeHorario" (adelantada o atrasada), dilo con claridad y di la hora que tenía antes: es lo que más fácil se pasa por alto.
+
 Si un correo es solo la invitación a una reunión que ya mencionaste, es parte de esa reunión: no lo cuentes como una prioridad aparte.`
 
 // One line of free text: no line breaks, so an extra cannot pose as a new instruction block.

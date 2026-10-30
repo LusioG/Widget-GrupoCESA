@@ -1,23 +1,30 @@
 import { Notification } from 'electron'
 import { IPC } from '../shared/ipcChannels'
+import { beforeText, meetingMove } from '../shared/meetingMove'
 import { strings } from '../shared/strings'
 import type { AppState, Signal } from '../shared/types'
 import { getState, onStateChange } from './appState'
 import {
+  movedKey,
   shouldNotify,
+  shouldNotifyMoved,
   shouldSound,
   startupHandledIds,
+  startupMovedKeys,
   startupSoundIds
 } from './engine/notifyPolicy'
 import { getBadgeWindow } from './windows/badge'
 import { openPanel } from './windows/panel'
 
 const MAX_INDIVIDUAL = 3
+const clock = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' })
 
 // Ids already handled, so each item notifies at most once.
 const handled = new Set<string>()
 // Ids that already made a sound.
 const soundHandled = new Set<string>()
+// Changes of a meeting's time already told (see movedKey).
+const movedHandled = new Set<string>()
 
 function show(title: string, body: string): void {
   if (!Notification.isSupported()) return
@@ -31,6 +38,19 @@ function show(title: string, body: string): void {
 function playSound(): void {
   const win = getBadgeWindow()
   if (win && !win.isDestroyed()) win.webContents.send(IPC.playSound)
+}
+
+// "Revisión de presupuesto: atrasada, ahora a las 16:00 (antes 15:00)".
+function movedBody(s: Signal, now: number): string {
+  const startsAt = s.startsAt ?? s.occurredAt
+  const move = meetingMove(startsAt, s.movedFrom)
+  if (!move) return s.title
+  return strings.notify.meetingMovedBody(
+    s.title,
+    move.direction,
+    clock.format(startsAt),
+    beforeText(move, startsAt, now)
+  )
 }
 
 function describe(s: Signal): { title: string; body: string } {
@@ -50,8 +70,21 @@ function onState(state: AppState): void {
   // Separate sets: an ordinary mail that already sounded can still notify later if it turns urgent.
   const sounding = state.signals.filter((s) => !soundHandled.has(s.id) && shouldSound(s, ctx, now))
   sounding.forEach((s) => soundHandled.add(s.id))
+  const moved = state.signals.filter(
+    (s) => !movedHandled.has(movedKey(s)) && shouldNotifyMoved(s, ctx, now)
+  )
+  moved.forEach((s) => movedHandled.add(movedKey(s)))
   // No sound while the user is presenting or has something full screen.
-  if (sounding.length > 0 && state.settings.notifications.sound && !state.presenting) playSound()
+  if (
+    (sounding.length > 0 || moved.length > 0) &&
+    state.settings.notifications.sound &&
+    !state.presenting
+  ) {
+    playSound()
+  }
+  if (moved.length > 0 && state.settings.notifications.enabled) {
+    for (const s of moved) show(strings.notify.meetingMoved, movedBody(s, now))
+  }
 
   const due = state.signals.filter((s) => !handled.has(s.id) && shouldNotify(s, ctx, now))
   if (due.length === 0) return
@@ -74,5 +107,6 @@ export function startNotifier(): void {
   const signals = getState().signals
   startupHandledIds(signals, Date.now()).forEach((id) => handled.add(id))
   startupSoundIds(signals, Date.now()).forEach((id) => soundHandled.add(id))
+  startupMovedKeys(signals, Date.now()).forEach((key) => movedHandled.add(key))
   onStateChange(onState)
 }

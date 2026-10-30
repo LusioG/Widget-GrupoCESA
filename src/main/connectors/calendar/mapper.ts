@@ -43,6 +43,15 @@ export function eventInterval(event: CalendarEvent): Interval | null {
   return { start: s, end: e }
 }
 
+// Remembers that a meeting was moved. `previous` is what was read the time before: if the start
+// differs now, the old start is kept as `movedFrom`; if it is the same, an earlier change is kept.
+// A meeting seen for the first time has nothing to compare with, so it is never "moved".
+export function trackMove(previous: Signal | undefined, next: Signal): Signal {
+  if (!previous || previous.startsAt === undefined || next.startsAt === undefined) return next
+  if (previous.startsAt !== next.startsAt) return { ...next, movedFrom: previous.startsAt }
+  return previous.movedFrom !== undefined ? { ...next, movedFrom: previous.movedFrom } : next
+}
+
 export function eventToSignal(event: CalendarEvent): Signal | null {
   const interval = eventInterval(event)
   if (!interval || !event.id) return null

@@ -6,6 +6,7 @@ import {
   orderSections
 } from '../../shared/briefingPrompt'
 import { dayOffset } from '../../shared/calendarWindow'
+import { meetingMove } from '../../shared/meetingMove'
 import { strings } from '../../shared/strings'
 import type {
   Briefing,
@@ -69,12 +70,20 @@ export function buildAiPayload(
   const meetings = (): Record<string, unknown>[] =>
     b.meetings.map((m) => {
       ids.add(m.id)
+      const move = meetingMove(m.startsAt, m.movedFrom)
       return {
         id: m.id,
         titulo: maskForAi(m.title),
         inicio: m.startsAt !== undefined ? hhmm(m.startsAt) : undefined,
         fin: m.endsAt !== undefined ? hhmm(m.endsAt) : undefined,
-        conVideollamada: !!m.meetingUrl
+        conVideollamada: !!m.meetingUrl,
+        // Only when its time was changed: "adelantada" or "atrasada", and the time it had before.
+        ...(move
+          ? {
+              cambioDeHorario: move.direction === 'earlier' ? 'adelantada' : 'atrasada',
+              horaAnterior: hhmm(move.before)
+            }
+          : {})
       }
     })
 

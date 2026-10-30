@@ -13,6 +13,9 @@ export type Signal = {
   occurredAt: number
   startsAt?: number // meetings
   endsAt?: number
+  // Meetings: the start time before its last change, when it was moved earlier or later. Kept
+  // until the meeting takes place, so the change is not missed.
+  movedFrom?: number
   meetingUrl?: string
   dueAt?: number // tasks
   priority?: TaskPriority // tasks that have one set in ClickUp
@@ -129,6 +132,7 @@ export type BriefingItem = {
   url: string
   startsAt?: number
   endsAt?: number
+  movedFrom?: number // meetings: the start time before it was changed
   meetingUrl?: string
   dueAt?: number
   priority?: TaskPriority

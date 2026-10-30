@@ -33,6 +33,28 @@ export function startupSoundIds(signals: Signal[], now: number): string[] {
   return signals.filter((s) => shouldSound(s, open, now)).map((s) => s.id)
 }
 
+// A meeting that changed time and starts within the next day: worth telling, once per change. A
+// change for a meeting far ahead only shows as a tag in the panel.
+export const MOVED_NOTIFY_WINDOW_MS = 24 * 60 * 60 * 1000
+
+// One change of one meeting: if it moves again it is a new key and tells again.
+export const movedKey = (s: Signal): string => `${s.id}@${s.startsAt}<${s.movedFrom}`
+
+export function shouldNotifyMoved(signal: Signal, ctx: NotifyContext, now: number): boolean {
+  if (!ctx.enabled || ctx.paused || !ctx.workTime || ctx.focus) return false
+  if (signal.kind !== 'meeting' || signal.movedFrom === undefined) return false
+  if (signal.startsAt === undefined || signal.startsAt === signal.movedFrom) return false
+  const startsIn = signal.startsAt - now
+  return startsIn > 0 && startsIn <= MOVED_NOTIFY_WINDOW_MS
+}
+
+// At startup, the changes already there were announced in the previous session. A change that
+// shows up afterwards (the meeting moved while the widget was closed) still tells.
+export function startupMovedKeys(signals: Signal[], now: number): string[] {
+  const open: NotifyContext = { enabled: true, paused: false, workTime: true, focus: false }
+  return signals.filter((s) => shouldNotifyMoved(s, open, now)).map(movedKey)
+}
+
 // Few notifications on purpose: urgent items, people writing to you, and meetings about to start.
 export function shouldNotify(signal: Signal, ctx: NotifyContext, now: number): boolean {
   if (!ctx.enabled || ctx.paused || !ctx.workTime) return false
