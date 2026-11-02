@@ -242,7 +242,7 @@ describe('Slack module is read-only', () => {
     }
     expect([...used].sort()).toEqual([
       'auth.test',
-      'conversations.info',
+      'search.messages',
       'users.conversations',
       'users.info'
     ])

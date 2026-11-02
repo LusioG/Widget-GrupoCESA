@@ -36,5 +36,6 @@ export const IPC = {
   aiTest: 'ai:test',
   updateCheck: 'update:check',
   updateInstall: 'update:install',
-  quitApp: 'system:quit'
+  quitApp: 'system:quit',
+  copyClaudeGuide: 'system:copy-claude-guide'
 } as const

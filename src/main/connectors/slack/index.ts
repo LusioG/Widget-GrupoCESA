@@ -1,10 +1,8 @@
-import type { SocketModeClient } from '@slack/socket-mode'
 import type { WebClient } from '@slack/web-api'
 import type { Signal, SlackChannel } from '../../../shared/types'
 import { deleteSecret, getSecret, hasSecret, setSecret } from '../../auth/secrets'
-import { nextDelay } from '../../engine/backoff'
 import { getSettings } from '../../settingsStore'
-import { AuthError, type Connector, type ConnectorContext, type RealtimeHandlers } from '../types'
+import { AuthError, type Connector, type ConnectorContext } from '../types'
 import {
   classifyMessage,
   type ConversationKind,
@@ -14,7 +12,6 @@ import {
 import { emptyDmState, parseDmState, pruneDmState, slackFollowups, type DmState } from './followups'
 
 const KEYS = {
-  appToken: 'slack.appToken',
   userToken: 'slack.userToken',
   identity: 'slack.identity'
 } as const
@@ -22,33 +19,48 @@ const KEYS = {
 const DAY = 24 * 60 * 60 * 1000
 const KEEP_MS = 3 * DAY // how long a mention/DM stays in the list
 const KEEP_MAX = 100
-const FOLLOWUP_REFRESH_MS = 10 * 60 * 1000
-const RECONNECT_WATCHDOG_MS = 90_000
+const SEARCH_COUNT = 50 // newest matches per query and per check
 
 const AUTH_ERRORS =
-  /invalid_auth|not_authed|token_revoked|token_expired|account_inactive|not_allowed_token_type/i
+  /invalid_auth|not_authed|token_revoked|token_expired|account_inactive|not_allowed_token_type|missing_scope|no_permission/i
 
 function isSlackAuthError(error: unknown): boolean {
   const e = error as { data?: { error?: string }; message?: string }
   return AUTH_ERRORS.test(`${e?.data?.error ?? ''} ${e?.message ?? ''}`)
 }
 
-// Tests point both SDK clients at a local mock through this variable.
+// Tests point the SDK client at a local mock through this variable.
 const apiUrl = (): string | undefined => process.env['SLACK_API_URL']
 
 type Identity = { userId: string; workspaceUrl: string }
 
+type SearchMatch = {
+  type?: string
+  subtype?: string
+  bot_id?: string
+  user?: string
+  text?: string
+  ts?: string
+  channel?: {
+    id?: string
+    name?: string
+    is_im?: boolean
+    is_mpim?: boolean
+    is_private?: boolean
+  }
+}
+
+const isoDay = (ms: number): string => new Date(ms).toISOString().slice(0, 10)
+
+// Polled (not push-based): every check asks Slack's search for the newest direct messages and
+// mentions with the user token alone, so no app-level token or Socket Mode is needed.
 export class SlackConnector implements Connector {
   readonly id = 'slack' as const
 
   private web?: WebClient
-  private socket?: SocketModeClient
   private identity?: Identity
-  private handlers?: RealtimeHandlers
-  private ctx?: ConnectorContext
-  private stopped = true
-  private watchdog?: NodeJS.Timeout
-  private followupTimer?: NodeJS.Timeout
+  private loaded = false
+  private since = 0 // only messages newer than the moment Slack was connected are news
 
   private readonly buffer = new Map<string, Signal>()
   private dm: DmState = emptyDmState()
@@ -59,12 +71,11 @@ export class SlackConnector implements Connector {
   >()
 
   async isConnected(): Promise<boolean> {
-    return hasSecret(KEYS.userToken) && hasSecret(KEYS.appToken)
+    return hasSecret(KEYS.userToken)
   }
 
-  // Tokens are stored first, then validated by `connect()`.
-  setTokens(appToken: string, userToken: string): void {
-    setSecret(KEYS.appToken, appToken.trim())
+  // The token is stored first, then validated by `connect()`.
+  setToken(userToken: string): void {
     setSecret(KEYS.userToken, userToken.trim())
   }
 
@@ -81,137 +92,107 @@ export class SlackConnector implements Connector {
       const auth = await web.auth.test() // read-only; also tells us who "me" is
       if (!auth.user_id || !auth.url) throw new Error('Unexpected auth.test response')
       setSecret(KEYS.identity, JSON.stringify({ userId: auth.user_id, workspaceUrl: auth.url }))
+      this.reset()
     } catch (error) {
       this.clearSecrets()
-      throw isSlackAuthError(error) ? new AuthError('Slack rejected the tokens') : error
+      throw isSlackAuthError(error) ? new AuthError('Slack rejected the token') : error
     }
   }
 
   private clearSecrets(): void {
-    deleteSecret(KEYS.appToken)
     deleteSecret(KEYS.userToken)
     deleteSecret(KEYS.identity)
   }
 
-  async disconnect(): Promise<void> {
-    await this.stop()
-    this.clearSecrets()
+  private reset(): void {
+    this.web = undefined
+    this.identity = undefined
+    this.loaded = false
+    this.since = 0
     this.buffer.clear()
     this.users.clear()
     this.channels.clear()
     this.dm = emptyDmState()
   }
 
-  // Slack is push-based; the heartbeat just reports what is currently known.
-  async sync(): Promise<Signal[]> {
-    return this.snapshot()
+  async disconnect(): Promise<void> {
+    this.clearSecrets()
+    this.reset()
   }
 
-  // ---- realtime ----
+  // ---- polling ----
 
-  async start(ctx: ConnectorContext, handlers: RealtimeHandlers): Promise<void> {
-    await this.stop()
-    this.stopped = false
-    this.ctx = ctx
-    this.handlers = handlers
-
+  private async load(ctx: ConnectorContext): Promise<void> {
     try {
       this.identity = JSON.parse(getSecret(KEYS.identity) ?? '') as Identity
     } catch {
-      this.identity = undefined
+      throw new AuthError('Slack identity missing')
     }
-    if (!this.identity || !getSecret(KEYS.appToken)) {
-      handlers.onAuthError()
-      return
-    }
-
     this.web = await this.newWebClient()
-    this.dm = pruneDmState(parseDmState(await ctx.getCursor()), Date.now())
+    const raw = await ctx.getCursor()
+    this.dm = pruneDmState(parseDmState(raw), Date.now())
+    try {
+      const since = (JSON.parse(raw ?? '') as { since?: unknown }).since
+      if (typeof since === 'number') this.since = since
+    } catch {
+      // No cursor yet.
+    }
+    if (!this.since) {
+      this.since = Date.now()
+      await this.saveCursor(ctx)
+    }
     for (const s of await ctx.loadCached()) {
       if (s.kind === 'mention' || s.kind === 'dm') this.buffer.set(s.id, s)
     }
-    this.emit()
-    this.followupTimer = setInterval(() => this.emit(), FOLLOWUP_REFRESH_MS)
-
-    await this.openSocket()
+    this.loaded = true
   }
 
-  async stop(): Promise<void> {
-    this.stopped = true
-    if (this.watchdog) clearTimeout(this.watchdog)
-    if (this.followupTimer) clearInterval(this.followupTimer)
-    this.watchdog = this.followupTimer = undefined
-    const socket = this.socket
-    this.socket = undefined
-    if (socket) await socket.disconnect().catch(() => undefined)
+  private saveCursor(ctx: ConnectorContext): Promise<void> {
+    return ctx.setCursor(JSON.stringify({ ...pruneDmState(this.dm, Date.now()), since: this.since }))
   }
 
-  private async openSocket(): Promise<void> {
-    const appToken = getSecret(KEYS.appToken)
-    if (!appToken) {
-      this.handlers?.onAuthError()
-      return
-    }
-    const { SocketModeClient } = await import('@slack/socket-mode')
-    const socket = new SocketModeClient({
-      appToken,
-      autoReconnectEnabled: true,
-      clientOptions: { slackApiUrl: apiUrl() }
-    })
-    this.socket = socket
+  async sync(ctx: ConnectorContext): Promise<Signal[]> {
+    if (!this.loaded) await this.load(ctx)
+    const web = this.web!
+    const me = this.identity!.userId
+    const after = isoDay(this.since - DAY) // search filters by whole days; `since` does the rest
 
-    socket.on('connected', () => {
-      if (this.watchdog) clearTimeout(this.watchdog)
-      this.handlers?.onStatus(true)
-    })
-    // A dropped socket emits "close" right away; "reconnecting" only comes after the retry delay.
-    const onDown = (): void => {
-      if (this.stopped || this.socket !== socket) return
-      this.handlers?.onStatus(false)
-      // The SDK keeps retrying by itself; if it has not recovered in time, start over from scratch.
-      if (this.watchdog) clearTimeout(this.watchdog)
-      this.watchdog = setTimeout(() => void this.restartSocket(), RECONNECT_WATCHDOG_MS)
-    }
-    socket.on('close', onDown)
-    socket.on('reconnecting', onDown)
-    socket.on('disconnected', onDown)
-    socket.on(
-      'message',
-      async ({ event, ack }: { event: SlackMessageEvent; ack: () => Promise<void> }) => {
-        await ack() // Slack retries unacknowledged events
-        try {
-          await this.onMessage(event)
-        } catch {
-          // One bad event must never break the connection; never log message content.
-        }
+    try {
+      const matches: SearchMatch[] = []
+      for (const query of [`is:dm after:${after}`, `<@${me}> after:${after}`]) {
+        const res = await web.search.messages({
+          query,
+          sort: 'timestamp',
+          sort_dir: 'desc',
+          count: SEARCH_COUNT
+        })
+        matches.push(...((res.messages?.matches ?? []) as SearchMatch[]))
       }
-    )
 
-    let failures = 0
-    while (!this.stopped && this.socket === socket) {
-      try {
-        await socket.start()
-        return
-      } catch (error) {
-        if (isSlackAuthError(error)) {
-          this.handlers?.onAuthError()
-          return
-        }
-        failures += 1
-        await new Promise((r) => setTimeout(r, nextDelay(2000, failures, 60_000)))
+      // Oldest first, so the latest message of each conversation is the one that is kept.
+      const seen = new Set<string>()
+      const fresh = matches
+        .filter((m) => m.ts && m.channel?.id && Number(m.ts) * 1000 > this.since)
+        .filter((m) => {
+          const key = `${m.channel!.id}:${m.ts}`
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+        .sort((a, b) => Number(a.ts) - Number(b.ts))
+
+      let changed = false
+      for (const match of fresh) {
+        changed = (await this.apply(match)) || changed
       }
+      if (changed) await this.saveCursor(ctx)
+    } catch (error) {
+      throw isSlackAuthError(error) ? new AuthError('Slack rejected the token') : error
     }
+    return this.snapshot()
   }
 
-  private async restartSocket(): Promise<void> {
-    if (this.stopped) return
-    const old = this.socket
-    this.socket = undefined
-    if (old) await old.disconnect().catch(() => undefined)
-    await this.openSocket()
-  }
-
-  // ---- events ----
+  // ---- messages ----
 
   private lookups(): SlackLookups {
     const web = this.web!
@@ -236,62 +217,63 @@ export class SlackConnector implements Connector {
         this.users.set(id, info)
         return info
       },
-      conversation: async (channel, hint) => {
-        const cached = this.channels.get(channel)
-        if (cached) return cached
-        const prefixKind: ConversationKind = channel.startsWith('D') ? 'im' : 'channel'
-        let info: { kind: ConversationKind; name?: string; peerId?: string } = {
-          kind: hint ?? prefixKind
-        }
-        try {
-          const res = await web.conversations.info({ channel })
-          const c = res.channel as
-            | {
-                is_im?: boolean
-                is_mpim?: boolean
-                is_private?: boolean
-                name?: string
-                user?: string
-              }
-            | undefined
-          if (c) {
-            const kind: ConversationKind = c.is_im
-              ? 'im'
-              : c.is_mpim
-                ? 'mpim'
-                : c.is_private
-                  ? 'group'
-                  : 'channel'
-            info = { kind, name: c.name, peerId: c.user }
-          }
-        } catch {
-          // Keep the hinted kind.
-        }
-        this.channels.set(channel, info)
-        return info
-      }
+      // Search results already say what each conversation is (seeded in `apply`).
+      conversation: async (channel, hint) =>
+        this.channels.get(channel) ?? { kind: hint ?? (channel.startsWith('D') ? 'im' : 'channel') }
     }
   }
 
-  private async onMessage(event: SlackMessageEvent): Promise<void> {
-    if (!this.web || !this.identity) return
+  // Returns true when the message changed what is remembered.
+  private async apply(match: SearchMatch): Promise<boolean> {
+    const c = match.channel!
+    const kind: ConversationKind = c.is_im
+      ? 'im'
+      : c.is_mpim
+        ? 'mpim'
+        : c.is_private
+          ? 'group'
+          : 'channel'
+    // For a direct message the "name" Slack gives is the id of the other person.
+    this.channels.set(c.id!, {
+      kind,
+      name: kind === 'im' ? undefined : c.name,
+      peerId: kind === 'im' ? c.name : undefined
+    })
+    const event: SlackMessageEvent = {
+      type: 'message',
+      subtype: match.subtype,
+      channel: c.id,
+      channel_type: kind,
+      user: match.user,
+      bot_id: match.bot_id,
+      text: match.text,
+      ts: match.ts
+    }
     const result = await classifyMessage(event, this.lookups())
 
     if (result.type === 'signal') {
       this.buffer.set(result.signal.id, result.signal)
-      if (result.isDm) this.dm.lastIncoming[result.channel] = result.at
-    } else if (result.type === 'sent') {
-      this.dm.sentByChannel[result.channel] = {
-        at: result.at,
-        text: result.text,
-        to: result.to,
-        url: result.url
+      if (result.isDm) {
+        this.dm.lastIncoming[result.channel] = Math.max(
+          this.dm.lastIncoming[result.channel] ?? 0,
+          result.at
+        )
       }
-    } else {
-      return
+      return true
     }
-    await this.ctx?.setCursor(JSON.stringify(pruneDmState(this.dm, Date.now())))
-    this.emit()
+    if (result.type === 'sent') {
+      const known = this.dm.sentByChannel[result.channel]
+      if (!known || result.at >= known.at) {
+        this.dm.sentByChannel[result.channel] = {
+          at: result.at,
+          text: result.text,
+          to: result.to,
+          url: result.url
+        }
+      }
+      return true
+    }
+    return false
   }
 
   private snapshot(): Signal[] {
@@ -303,10 +285,6 @@ export class SlackConnector implements Connector {
     this.buffer.clear()
     recent.forEach((s) => this.buffer.set(s.id, s))
     return [...recent, ...slackFollowups(this.dm, now, getSettings().followups.waitHours)]
-  }
-
-  private emit(): void {
-    this.handlers?.onSignals(this.snapshot())
   }
 
   // Channels the user is in, to choose which ones to ignore.

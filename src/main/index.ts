@@ -2,7 +2,7 @@ import { app, BrowserWindow, Notification, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { strings } from '../shared/strings'
-import { initAccounts, startRealtimeConnectors } from './accounts'
+import { initAccounts } from './accounts'
 import { initInbox, onStateChange, setAppVersion, setSourceSignals, startTicker } from './appState'
 import { initBriefings, startBriefing, stopBriefing } from './briefing'
 import { closeDb, initDb, wasDatabaseReset } from './db/client'
@@ -13,7 +13,9 @@ import { logError, logInfo, logWarn } from './logger'
 import { startNotifier } from './notifier'
 import { startPresence, stopPresence } from './presence'
 import { startScheduler } from './scheduler'
+import { startConfigFile } from './configFile'
 import { getSettings, initSettings } from './settingsStore'
+import { applySettingsPatch } from './settingsApply'
 import { registerSystemEvents } from './system'
 import { createTray, refreshTrayMenu } from './tray'
 import { startUpdater, stopUpdater } from './updater'
@@ -100,7 +102,6 @@ if (!app.requestSingleInstanceLock()) {
         }
       } else {
         startScheduler(FIRST_SYNC_DELAY_MS)
-        startRealtimeConnectors(FIRST_SYNC_DELAY_MS)
       }
       startNotifier()
       startBriefing()
@@ -109,6 +110,7 @@ if (!app.requestSingleInstanceLock()) {
       applyHotkey()
       startPresence()
       startTabRows()
+      startConfigFile(applySettingsPatch) // after the windows exist: edits made while closed apply now
 
       // First run: show the onboarding.
       if (!getSettings().onboardingDone) setTimeout(() => openPanel(), 1200)

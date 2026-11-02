@@ -80,6 +80,34 @@ const rows: Record<
   }
 }
 
+// Copies the guide an AI assistant needs to configure the widget (it never includes any secret).
+function ClaudeCard(): React.JSX.Element {
+  const c = strings.settings.claude
+  const [copied, setCopied] = useState(false)
+  return (
+    <Card className="mt-4 space-y-2.5">
+      <div>
+        <div className="text-sm text-cesa-ink">{c.title}</div>
+        <div className="text-xs text-cesa-mute">{c.hint}</div>
+      </div>
+      <Button
+        variant="ghost"
+        onClick={async () => {
+          await window.api.system.copyClaudeGuide()
+          setCopied(true)
+        }}
+      >
+        {c.button}
+      </Button>
+      {copied && (
+        <div role="status" className="text-xs text-cesa-mute">
+          {c.copied}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // At the bottom of the list: closes the whole widget. It asks once more, so a stray click does not.
 function QuitCard(): React.JSX.Element {
   const q = strings.settings.quit
@@ -150,6 +178,7 @@ export function Settings(): React.JSX.Element {
             )
           })
         )}
+        {!Page && <ClaudeCard />}
         {!Page && <QuitCard />}
       </div>
     </>

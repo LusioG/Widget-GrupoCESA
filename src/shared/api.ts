@@ -31,7 +31,7 @@ export interface Api {
     connectClickUp(token: string): Promise<ActionResult>
     saveGoogleCredentials(clientId: string, clientSecret: string): Promise<ActionResult>
     connectGoogle(feature: GoogleFeature): Promise<ActionResult>
-    connectSlack(appToken: string, userToken: string): Promise<ActionResult>
+    connectSlack(userToken: string): Promise<ActionResult>
     disconnect(source: Source): Promise<void>
     listClickUpLists(): Promise<ClickUpList[]>
     listGmailLabels(): Promise<GmailLabel[]>
@@ -52,6 +52,8 @@ export interface Api {
     setWidgetHidden(hidden: boolean): Promise<void>
     // Closes the widget completely (it stops running until it is opened again).
     quitApp(): Promise<void>
+    // Copies the instructions an AI assistant needs to configure the widget.
+    copyClaudeGuide(): Promise<void>
   }
   // The page only forwards the pointer; the main process tells a click from a drag.
   badge: {

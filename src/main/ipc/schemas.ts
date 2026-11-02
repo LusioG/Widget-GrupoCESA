@@ -16,10 +16,7 @@ export const googleCredentialsSchema = z.object({
 
 export const googleFeatureSchema = z.enum(['calendar', 'gmail'])
 
-export const slackTokensSchema = z.object({
-  appToken: z.string().min(1).max(512),
-  userToken: z.string().min(1).max(512)
-})
+export const slackTokenSchema = z.string().min(1).max(512)
 
 const itemIds = z.array(z.string().min(1).max(200)).min(1).max(1000)
 

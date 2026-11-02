@@ -35,8 +35,7 @@ const api: Api = {
     saveGoogleCredentials: (clientId, clientSecret) =>
       ipcRenderer.invoke(IPC.googleSaveCredentials, { clientId, clientSecret }),
     connectGoogle: (feature) => ipcRenderer.invoke(IPC.googleConnect, feature),
-    connectSlack: (appToken, userToken) =>
-      ipcRenderer.invoke(IPC.slackConnect, { appToken, userToken }),
+    connectSlack: (userToken) => ipcRenderer.invoke(IPC.slackConnect, userToken),
     disconnect: (source) => ipcRenderer.invoke(IPC.accountDisconnect, source),
     listClickUpLists: () => ipcRenderer.invoke(IPC.clickupLists),
     listGmailLabels: () => ipcRenderer.invoke(IPC.gmailLabels),
@@ -53,7 +52,8 @@ const api: Api = {
     setAutostart: (enabled) => ipcRenderer.invoke(IPC.autostartSet, enabled),
     setFocus: (enabled) => ipcRenderer.invoke(IPC.focusSet, enabled),
     setWidgetHidden: (hidden) => ipcRenderer.invoke(IPC.widgetHide, hidden),
-    quitApp: () => ipcRenderer.invoke(IPC.quitApp)
+    quitApp: () => ipcRenderer.invoke(IPC.quitApp),
+    copyClaudeGuide: () => ipcRenderer.invoke(IPC.copyClaudeGuide)
   },
   badge: {
     press: () => ipcRenderer.send(IPC.badgePress),

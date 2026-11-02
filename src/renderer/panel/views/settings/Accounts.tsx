@@ -117,7 +117,6 @@ function ClickUpCard(): React.JSX.Element {
 
 function SlackCard(): React.JSX.Element {
   const account = useAppStore((st) => st.state?.accounts.slack)
-  const [appToken, setAppToken] = useState('')
   const [userToken, setUserToken] = useState('')
   const { busy, error, run } = useAction()
   const status = account?.status ?? 'disconnected'
@@ -140,21 +139,14 @@ function SlackCard(): React.JSX.Element {
           </details>
           <TextField
             type="password"
-            value={appToken}
-            onChange={(e) => setAppToken(e.target.value)}
-            placeholder={s.slackAppToken}
-          />
-          <TextField
-            type="password"
             value={userToken}
             onChange={(e) => setUserToken(e.target.value)}
             placeholder={s.slackUserToken}
           />
           <Button
-            disabled={busy || !appToken.trim() || !userToken.trim()}
+            disabled={busy || !userToken.trim()}
             onClick={async () => {
-              if (await run(() => window.api.accounts.connectSlack(appToken, userToken))) {
-                setAppToken('')
+              if (await run(() => window.api.accounts.connectSlack(userToken))) {
                 setUserToken('')
               }
             }}

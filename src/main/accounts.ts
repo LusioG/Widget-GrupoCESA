@@ -15,18 +15,15 @@ import { SlackConnector } from './connectors/slack'
 import {
   ApiDisabledError,
   AuthError,
-  type Connector,
-  type RealtimeHandlers
+  type Connector
 } from './connectors/types'
 import {
   clearSource,
   getSyncState,
   loadCachedSignals,
-  replaceCachedSignals,
   saveSyncState
 } from './db/repos'
-import { logInfo, logWarn } from './logger'
-import { contextFor, haltSource, registerConnector, syncNow } from './scheduler'
+import { haltSource, registerConnector, syncNow } from './scheduler'
 
 const clickup = new ClickUpConnector()
 const calendar = new CalendarConnector()
@@ -34,16 +31,18 @@ const gmail = new GmailConnector()
 const slack = new SlackConnector()
 const connectors: Record<Source, Connector> = { clickup, calendar, gmail, slack }
 
-const CLICKUP_POLL_MS = 5 * 60 * 1000
+const CLICKUP_POLL_MS = 3 * 60 * 1000 // each check reads several pages of tasks: keep well under 100 requests/min
 const CALENDAR_POLL_MS = 60 * 1000 // an incremental check is one tiny request
-const GMAIL_POLL_MS = 90 * 1000 // 1-2 minutes
+const GMAIL_POLL_MS = 60 * 1000
+const SLACK_POLL_MS = 60 * 1000 // two searches per check, far below Slack's limits
 
 export { hasGoogleCredentials }
 
 export async function initAccounts(): Promise<void> {
   registerConnector(clickup, CLICKUP_POLL_MS)
   registerConnector(calendar, CALENDAR_POLL_MS)
-  registerConnector(gmail, GMAIL_POLL_MS) // Slack is push-based and is not polled
+  registerConnector(gmail, GMAIL_POLL_MS)
+  registerConnector(slack, SLACK_POLL_MS)
 
   for (const [source, connector] of Object.entries(connectors) as [Source, Connector][]) {
     if (!(await connector.isConnected())) continue
@@ -53,63 +52,6 @@ export async function initAccounts(): Promise<void> {
     setSourceSignals(source, await loadCachedSignals(source)) // last known data while syncing
     if (status === 'needs_reconnect') haltSource(source)
   }
-}
-
-// ---- push-based connectors (Slack) ----
-
-function realtimeHandlers(source: Source): RealtimeHandlers {
-  return {
-    onSignals: (signals) => {
-      void replaceCachedSignals(source, signals)
-      setSourceSignals(source, signals)
-    },
-    onAuthError: () => {
-      logWarn('realtime', `${source}: credentials rejected, the account must be reconnected`)
-      void saveSyncState(source, { status: 'needs_reconnect', error: 'auth' })
-      setAccount(source, { status: 'needs_reconnect', error: 'auth' })
-      void connectors[source].stop?.()
-    },
-    onStatus: (online) => {
-      logInfo('realtime', `${source}: ${online ? 'connected' : 'connection lost, reconnecting'}`)
-      const lastSyncAt = Date.now()
-      if (online) void saveSyncState(source, { status: 'connected', lastSyncAt, error: null })
-      // Losing the network is not a disconnection: keep the account and show "reconnecting".
-      setAccount(source, { status: 'connected', lastSyncAt, error: online ? undefined : 'offline' })
-    }
-  }
-}
-
-async function startRealtime(source: Source): Promise<void> {
-  const connector = connectors[source]
-  if (!connector.start) return
-  await connector.start(contextFor(source), realtimeHandlers(source))
-}
-
-// After sleep or a network change a socket can be silently dead: start the connections over.
-export async function restartRealtimeConnectors(): Promise<void> {
-  for (const source of Object.keys(connectors) as Source[]) {
-    const connector = connectors[source]
-    if (!connector.start || !(await connector.isConnected())) continue
-    if ((await getSyncState(source))?.status === 'needs_reconnect') continue
-    await connector.stop?.()
-    await startRealtime(source).catch((error) =>
-      logWarn('realtime', `${source}: could not restart`, error)
-    )
-  }
-}
-
-// After launch, wait a bit before opening connections so startup stays quiet.
-export function startRealtimeConnectors(delayMs: number): void {
-  setTimeout(async () => {
-    for (const source of Object.keys(connectors) as Source[]) {
-      const connector = connectors[source]
-      if (!connector.start || !(await connector.isConnected())) continue
-      if ((await getSyncState(source))?.status === 'needs_reconnect') continue
-      await startRealtime(source).catch((error) =>
-        logWarn('realtime', `${source}: could not start`, error)
-      )
-    }
-  }, delayMs)
 }
 
 // ---- connecting / disconnecting ----
@@ -144,18 +86,14 @@ export async function connectClickUp(token: string): Promise<ActionResult> {
   }
 }
 
-export async function connectSlack(appToken: string, userToken: string): Promise<ActionResult> {
-  if (!appToken.trim().startsWith('xapp-')) {
-    return { ok: false, error: 'El token de la app debe empezar con xapp-.' }
-  }
+export async function connectSlack(userToken: string): Promise<ActionResult> {
   if (!userToken.trim().startsWith('xoxp-')) {
     return { ok: false, error: 'El token de usuario debe empezar con xoxp-.' }
   }
   try {
-    slack.setTokens(appToken, userToken)
+    slack.setToken(userToken)
     await slack.connect() // validates the user token
     await markConnected('slack')
-    await startRealtime('slack')
     return { ok: true }
   } catch (error) {
     return { ok: false, error: describe(error, 'No se pudo conectar con Slack.') }

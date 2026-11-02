@@ -1,4 +1,5 @@
-import { app, ipcMain, shell } from 'electron'
+import { app, clipboard, ipcMain, shell } from 'electron'
+import { CONFIG_GUIDE } from '../../shared/configGuide'
 import { IPC } from '../../shared/ipcChannels'
 import { strings } from '../../shared/strings'
 import type { ActionResult } from '../../shared/types'
@@ -12,8 +13,7 @@ import {
   listClickUpLists,
   listGmailLabels,
   listSlackChannels,
-  saveGoogleClient,
-  syncNow
+  saveGoogleClient
 } from '../accounts'
 import {
   applyItemAction,
@@ -28,17 +28,15 @@ import { deleteSecret, getSecret, setSecret } from '../auth/secrets'
 import {
   getBriefing,
   listBriefings,
-  onBriefingTimeChanged,
   openBriefing,
   regenerateBriefing
 } from '../briefing'
-import { applyHotkey } from '../hotkey'
 import { refreshAll } from '../scheduler'
 import { checkForUpdatesNow, installUpdateNow } from '../updater'
-import { getSettings, updateSettings } from '../settingsStore'
-import { applyLayout } from '../windows/apply'
+import { applySettingsPatch } from '../settingsApply'
+import { getSettings } from '../settingsStore'
 import { registerBadgeGestures } from '../windows/badge'
-import { applyBriefingLayout, closeBriefingWindow, fitBriefingWindow } from '../windows/briefing'
+import { closeBriefingWindow, fitBriefingWindow } from '../windows/briefing'
 import { closePanel, isPanelOpen, openPanel, togglePanel } from '../windows/panel'
 import {
   briefingDateSchema,
@@ -49,7 +47,7 @@ import {
   googleCredentialsSchema,
   googleFeatureSchema,
   itemActionSchema,
-  slackTokensSchema,
+  slackTokenSchema,
   sourceSchema
 } from './schemas'
 
@@ -76,22 +74,7 @@ export function registerIpc(): void {
   })
 
   ipcMain.handle(IPC.settingsUpdate, async (_event, patch) => {
-    const before = getSettings()
-    const next = await updateSettings(patch) // throws on invalid input, rejecting the call
-    const layout = (s: typeof next): string => JSON.stringify([s.widget, s.panel])
-    if (layout(before) !== layout(next)) applyLayout()
-    // Any change to what ClickUp tasks to show re-reads them right away.
-    if (JSON.stringify(before.clickup) !== JSON.stringify(next.clickup)) syncNow('clickup')
-    if (JSON.stringify(before.gmail.labelIds) !== JSON.stringify(next.gmail.labelIds)) {
-      syncNow('gmail')
-    }
-    if (JSON.stringify(before.hotkey) !== JSON.stringify(next.hotkey)) applyHotkey()
-    if (before.briefing.time !== next.briefing.time) void onBriefingTimeChanged(next.briefing.time)
-    // The summary window follows the height choice at once, even while it is open.
-    if (before.briefing.fullHeight !== next.briefing.fullHeight) applyBriefingLayout()
-    // A different number of days starts a new read of the calendar right away.
-    if (before.calendar.daysAhead !== next.calendar.daysAhead) syncNow('calendar')
-    publish()
+    await applySettingsPatch(patch) // throws on invalid input, rejecting the call
   })
 
   ipcMain.handle(IPC.clickupConnect, async (_event, raw): Promise<ActionResult> => {
@@ -118,8 +101,8 @@ export function registerIpc(): void {
   })
 
   ipcMain.handle(IPC.slackConnect, async (_event, raw): Promise<ActionResult> => {
-    const tokens = slackTokensSchema.safeParse(raw)
-    return tokens.success ? connectSlack(tokens.data.appToken, tokens.data.userToken) : invalid
+    const token = slackTokenSchema.safeParse(raw)
+    return token.success ? connectSlack(token.data) : invalid
   })
 
   ipcMain.handle(IPC.clickupLists, () => listClickUpLists())
@@ -144,6 +127,10 @@ export function registerIpc(): void {
   ipcMain.handle(IPC.itemUndo, () => undoLastChange())
 
   ipcMain.handle(IPC.syncRefresh, () => refreshAll())
+
+  ipcMain.handle(IPC.copyClaudeGuide, () => {
+    clipboard.writeText(CONFIG_GUIDE)
+  })
 
   ipcMain.handle(IPC.quitApp, () => {
     app.quit()

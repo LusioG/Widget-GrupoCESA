@@ -174,24 +174,20 @@ Notas importantes:
 
 ### Slack
 
-Cada usuario crea su propia app de Slack (una vez). La tarjeta de Slack incluye esta guía:
+Cada usuario crea su propia app de Slack (una vez). El widget **consulta Slack cada 60 s** con solo el
+_User OAuth Token_ (`xoxp-`): no usa Socket Mode ni _App-Level Token_. Un mensaje nuevo puede tardar
+hasta un minuto (más lo que tarde el índice de búsqueda de Slack) en aparecer. La tarjeta de Slack incluye esta guía:
 
 > **Atajo:** en [api.slack.com/apps](https://api.slack.com/apps) elige **Create New App → From a
 > manifest**, selecciona tu workspace y pega el contenido de
-> [`docs/slack-app-manifest.json`](docs/slack-app-manifest.json) (pestaña JSON). Eso deja hechos
-> los pasos 2 a 4 (permisos, eventos y Socket Mode). Después solo falta el _App-Level Token_
-> (`xapp-`, en **Basic Information → App-Level Tokens**, con el permiso `connections:write`), instalar
-> la app y copiar el _User OAuth Token_ (`xoxp-`).
+> [`docs/slack-app-manifest.json`](docs/slack-app-manifest.json) (pestaña JSON). Eso deja hechos los
+> permisos. Después solo falta instalar la app y copiar el _User OAuth Token_ (`xoxp-`).
 
 1. En [api.slack.com/apps](https://api.slack.com/apps): **Create New App → Blank app** (o _From scratch_ si Slack aún lo ofrece) y elige tu workspace.
-2. **Socket Mode**: actívalo y crea un _App-Level Token_ con el permiso `connections:write`
-   (empieza con `xapp-`).
-3. **OAuth & Permissions → User Token Scopes** (solo lectura): `channels:history`, `groups:history`,
-   `im:history`, `mpim:history`, `channels:read`, `groups:read`, `im:read`, `mpim:read`, `users:read`.
-4. **Event Subscriptions**: actívalo y en _Subscribe to events on behalf of users_ añade
-   `message.channels`, `message.groups`, `message.im` y `message.mpim`.
-5. **Install to Workspace** y copia el _User OAuth Token_ (empieza con `xoxp-`).
-6. Pega los dos tokens en la tarjeta de Slack.
+2. **OAuth & Permissions → User Token Scopes** (solo lectura): `search:read`, `channels:read`,
+   `groups:read`, `im:read`, `mpim:read`, `users:read`.
+3. **Install to Workspace** y copia el _User OAuth Token_ (empieza con `xoxp-`).
+4. Pega el token en la tarjeta de Slack.
 
 Llegan mensajes directos y menciones directas (no `@channel`). En **Fuentes y filtros** marcas los
 canales que quieres ignorar.

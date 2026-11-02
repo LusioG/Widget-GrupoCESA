@@ -162,12 +162,9 @@ export const strings = {
       slackGuideTitle: 'Cómo crear tu app de Slack (una vez)',
       slackSteps: [
         'Entra a api.slack.com/apps → Create New App → Blank app (o From scratch si Slack aún lo ofrece), y elige tu workspace.',
-        'Socket Mode: actívalo y crea un App-Level Token con el permiso connections:write (empieza con xapp-).',
-        'OAuth & Permissions → User Token Scopes (solo lectura): channels:history, groups:history, im:history, mpim:history, channels:read, groups:read, im:read, mpim:read, users:read.',
-        'Event Subscriptions: actívalo y en "Subscribe to events on behalf of users" añade message.channels, message.groups, message.im y message.mpim.',
-        'Install to Workspace y copia el "User OAuth Token" (empieza con xoxp-).'
+        'OAuth & Permissions → User Token Scopes (solo lectura): search:read, channels:read, groups:read, im:read, mpim:read, users:read.',
+        'Install to Workspace y copia el "User OAuth Token" (empieza con xoxp-). No hace falta Socket Mode ni App-Level Token.'
       ],
-      slackAppToken: 'App-Level Token (xapp-…)',
       slackUserToken: 'User OAuth Token (xoxp-…)',
       gmailHelp:
         'Usa el mismo cliente de Google de Calendar. Solo lee cabeceras y etiquetas (nunca el contenido ni los adjuntos). Al activarlo, Google vuelve a pedir permiso.',
@@ -244,6 +241,12 @@ export const strings = {
           ? 'Ahora se muestra 1 tarea de ClickUp.'
           : `Ahora se muestran ${n} tareas de ClickUp.`,
       yourRule: 'Resumen de tu configuración'
+    },
+    claude: {
+      title: 'Configurar con Claude',
+      hint: 'Copia las instrucciones para que tu asistente (Claude) cambie estos ajustes por ti. Las claves y cuentas las pegas tú en Cuentas.',
+      button: 'Copiar instrucciones para Claude',
+      copied: 'Copiado. Pégalo en tu conversación con Claude.'
     },
     quit: {
       title: 'Cerrar el widget',

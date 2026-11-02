@@ -7,15 +7,6 @@ export interface Connector {
   connect(): Promise<void> // validates stored credentials / opens the OAuth flow
   disconnect(): Promise<void> // deletes the token; the caller clears the cache
   sync(ctx: ConnectorContext): Promise<Signal[]> // full current set; incremental inside when possible
-  // Push-based connectors (Slack) keep a connection open instead of being polled.
-  start?(ctx: ConnectorContext, handlers: RealtimeHandlers): Promise<void>
-  stop?(): Promise<void>
-}
-
-export type RealtimeHandlers = {
-  onSignals(signals: Signal[]): void // the complete current set for the source
-  onAuthError(): void // credentials were revoked: the user must reconnect
-  onStatus(connected: boolean): void
 }
 
 export type ConnectorContext = {

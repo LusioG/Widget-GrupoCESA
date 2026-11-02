@@ -62,11 +62,18 @@ export function getSettings(): Settings {
   return current
 }
 
+// The config file keeps itself in step with every saved change (panel, drag of the tab, file).
+let onSaved: ((settings: Settings) => void) | null = null
+export function setSettingsSavedListener(listener: (settings: Settings) => void): void {
+  onSaved = listener
+}
+
 export async function updateSettings(rawPatch: unknown): Promise<Settings> {
   const patch = settingsPatchSchema.parse(rawPatch)
   const next = settingsSchema.parse(applyPatch(current, patch))
   current = next
   await writeKey(SETTINGS_KEY, next)
+  onSaved?.(next)
   return next
 }
 
