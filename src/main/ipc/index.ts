@@ -13,6 +13,7 @@ import {
   listClickUpLists,
   listGmailLabels,
   listSlackChannels,
+  listSlackPeople,
   saveGoogleClient
 } from '../accounts'
 import {
@@ -33,6 +34,7 @@ import {
 } from '../briefing'
 import { refreshAll } from '../scheduler'
 import { checkForUpdatesNow, installUpdateNow } from '../updater'
+import { showTestNotifications } from '../notifier'
 import { applySettingsPatch } from '../settingsApply'
 import { getSettings } from '../settingsStore'
 import { registerBadgeGestures } from '../windows/badge'
@@ -108,6 +110,7 @@ export function registerIpc(): void {
   ipcMain.handle(IPC.clickupLists, () => listClickUpLists())
   ipcMain.handle(IPC.gmailLabels, () => listGmailLabels())
   ipcMain.handle(IPC.slackChannels, () => listSlackChannels())
+  ipcMain.handle(IPC.slackPeople, () => listSlackPeople())
 
   ipcMain.handle(IPC.autostartSet, (_event, raw) => {
     if (typeof raw !== 'boolean') return
@@ -127,6 +130,8 @@ export function registerIpc(): void {
   ipcMain.handle(IPC.itemUndo, () => undoLastChange())
 
   ipcMain.handle(IPC.syncRefresh, () => refreshAll())
+
+  ipcMain.handle(IPC.testNotifications, () => showTestNotifications())
 
   ipcMain.handle(IPC.copyClaudeGuide, () => {
     clipboard.writeText(CONFIG_GUIDE)

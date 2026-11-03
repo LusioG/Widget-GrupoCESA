@@ -317,7 +317,7 @@ describe('panel: summary, urgency and empty states', () => {
     expect(screen.queryByText(strings.panel.connectAccounts)).toBeNull()
   })
 
-  it('puts select and refresh together in one toolbar, and select only when there is something', () => {
+  it('puts select on the line of the "Pendientes y novedades" title, and only when there is something', () => {
     setState({ accounts: accounts({ clickup: { status: 'connected', lastSyncAt: Date.now() } }) })
     const { unmount } = render(<Home />)
     expect(screen.queryByText(strings.panel.select)).toBeNull()
@@ -328,8 +328,10 @@ describe('panel: summary, urgency and empty states', () => {
     })
     render(<Home />)
     const select = screen.getByText(strings.panel.select).closest('button')!
-    const refresh = screen.getByTitle(strings.panel.refresh)
-    expect(select.parentElement).toBe(refresh.parentElement)
+    const title = screen.getByText(strings.panel.pending)
+    expect(select.parentElement).toBe(title.closest('h2')!.parentElement)
+    // Refresh stays in the bar with the "updated" note, not next to the title.
+    expect(screen.getByTitle(strings.panel.refresh).parentElement).not.toBe(select.parentElement)
   })
 })
 

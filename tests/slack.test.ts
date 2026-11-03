@@ -244,7 +244,8 @@ describe('Slack module is read-only', () => {
       'auth.test',
       'search.messages',
       'users.conversations',
-      'users.info'
+      'users.info',
+      'users.list'
     ])
   })
 })

@@ -1,4 +1,4 @@
-import { DEFAULT_PANEL, SCALE_RANGE } from '@shared/settingsSchema'
+import { DEFAULT_PANEL, PANEL_WIDTH_RANGE, SCALE_RANGE } from '@shared/settingsSchema'
 import { strings } from '@shared/strings'
 import { Button, Card, Slider, Toggle } from '@renderer/components/ui'
 import { useAppStore } from '@renderer/store/useAppStore'
@@ -21,6 +21,16 @@ export function PanelSize(): React.JSX.Element {
         onCommit={(scale) => window.api.settings.update({ panel: { scale } })}
       />
       <p className="text-xs text-cesa-mute">{s.hint}</p>
+      <Slider
+        label={s.width}
+        value={panel.width}
+        min={PANEL_WIDTH_RANGE.min}
+        max={PANEL_WIDTH_RANGE.max}
+        step={10}
+        format={(v) => `${v} px`}
+        onCommit={(width) => window.api.settings.update({ panel: { width } })}
+      />
+      <p className="text-xs text-cesa-mute">{s.widthHint}</p>
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-sm text-cesa-ink">{s.fullHeight}</div>
@@ -34,7 +44,9 @@ export function PanelSize(): React.JSX.Element {
       </div>
       <Button
         variant="ghost"
-        onClick={() => window.api.settings.update({ panel: { scale: DEFAULT_PANEL.scale } })}
+        onClick={() => window.api.settings.update({
+            panel: { scale: DEFAULT_PANEL.scale, width: DEFAULT_PANEL.width }
+          })}
       >
         {s.reset}
       </Button>

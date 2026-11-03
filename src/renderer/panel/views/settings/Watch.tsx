@@ -10,7 +10,8 @@ import {
   type ListSpace
 } from '@shared/listTree'
 import { strings } from '@shared/strings'
-import type { ClickUpList, ClickUpMinPriority, Settings } from '@shared/types'
+import { personRule, setPersonRule, type PersonRule } from '@shared/personRule'
+import type { ClickUpList, ClickUpMinPriority, Settings, SlackPerson } from '@shared/types'
 import { ChevronRightIcon } from '@renderer/components/icons'
 import { Button, Card, Segment, TextField, Toggle } from '@renderer/components/ui'
 import { useAppStore } from '@renderer/store/useAppStore'
@@ -532,6 +533,57 @@ function SearchableChecklist({
   )
 }
 
+// ---------- Slack people: normal / urgent / ignore for each one ----------
+
+function SlackPeople({ people }: { people: SlackPerson[] }): React.JSX.Element {
+  const filters = useAppStore((st) => st.state?.settings.filters)
+  const [query, setQuery] = useState('')
+  if (!filters) return <></>
+  const lists = { important: filters.importantSenders, ignored: filters.ignoredSenders }
+  const visible = people.filter((p) => matchesQuery({ id: p.id, name: p.name, space: '' }, query))
+  const options: { value: PersonRule; label: string }[] = [
+    { value: 'normal', label: s.personNormal },
+    { value: 'urgent', label: s.personUrgent },
+    { value: 'ignore', label: s.personIgnore }
+  ]
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-cesa-mute">{s.slackPeopleHint}</p>
+      {people.length > 6 && (
+        <TextField
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={s.searchPlain}
+          aria-label={s.searchPlain}
+        />
+      )}
+      <div className="cesa-scroll max-h-72 space-y-1 overflow-y-auto">
+        {visible.length === 0 ? (
+          <p className="py-3 text-center text-xs text-cesa-mute">{s.noMatch}</p>
+        ) : (
+          visible.map((p) => (
+            <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1">
+              <span className="min-w-0 flex-1 truncate text-sm text-cesa-ink">{p.name}</span>
+              <Segment
+                label={p.name}
+                value={personRule(p.name, lists)}
+                options={options}
+                onChange={(rule) => {
+                  const next = setPersonRule(p.name, rule, lists)
+                  void window.api.settings.update({
+                    filters: { importantSenders: next.important, ignoredSenders: next.ignored }
+                  })
+                }}
+              />
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function Watch(): React.JSX.Element {
   const state = useAppStore((st) => st.state)
   const accounts = state?.accounts
@@ -554,10 +606,13 @@ export function Watch(): React.JSX.Element {
     }))
   )
 
+  const peopleRows = useList<SlackPerson>(slackOn, () => window.api.accounts.listSlackPeople())
+
   if (!settings) return <></>
   const cfg = settings.clickup
   const gmailIds = settings.gmail.labelIds
   const muted = settings.filters.mutedChannels
+  const urgentChannels = settings.filters.importantChannels
   const shownTasks = (state?.signals ?? []).filter((x) => x.source === 'clickup').length
 
   const setMuted = (names: string[]): Promise<void> =>
@@ -611,7 +666,18 @@ export function Watch(): React.JSX.Element {
           hint={s.slackHint}
           suffix={s.ignore}
           isChecked={(r) => muted.includes(r.name)}
-          onToggle={(r) => setMuted(toggleIn(muted, r.name))}
+          onToggle={(r) => {
+            // An ignored channel cannot also be urgent.
+            const nextMuted = toggleIn(muted, r.name)
+            void window.api.settings.update({
+              filters: {
+                mutedChannels: nextMuted,
+                ...(nextMuted.includes(r.name) && {
+                  importantChannels: urgentChannels.filter((n) => n !== r.name)
+                })
+              }
+            })
+          }}
           bulkLabel={s.ignoreVisible}
           clearLabel={s.stopIgnoring}
           onBulk={(visible) => {
@@ -621,6 +687,40 @@ export function Watch(): React.JSX.Element {
             else setMuted([...new Set([...muted, ...visible.map((r) => r.name)])])
           }}
         />
+      </Section>
+
+      <Section
+        title={s.slackUrgentTitle}
+        connected={slackOn}
+        needText={s.needSlack}
+        loaded={slackRows !== null}
+        empty={slackRows?.length === 0}
+      >
+        <SearchableChecklist
+          rows={slackRows ?? []}
+          hint={s.slackUrgentHint}
+          suffix={s.urgent}
+          isChecked={(r) => urgentChannels.includes(r.name)}
+          onToggle={(r) => {
+            const next = toggleIn(urgentChannels, r.name)
+            void window.api.settings.update({
+              filters: {
+                importantChannels: next,
+                ...(next.includes(r.name) && { mutedChannels: muted.filter((n) => n !== r.name) })
+              }
+            })
+          }}
+        />
+      </Section>
+
+      <Section
+        title={s.slackPeopleTitle}
+        connected={slackOn}
+        needText={s.needSlackPeople}
+        loaded={peopleRows !== null}
+        empty={peopleRows?.length === 0}
+      >
+        <SlackPeople people={peopleRows ?? []} />
       </Section>
 
       <CalendarHorizon connected={calendarOn} />

@@ -18,6 +18,7 @@ const PRIORITY_SENDER_SCORE = 0.9
 export type RankingContext = {
   now: number
   importantSenders: string[]
+  importantChannels?: string[] // Slack channels marked urgent
 }
 
 const BASE: Record<Signal['kind'], number> = {
@@ -37,6 +38,24 @@ const matches = (value: string | undefined, list: string[]): boolean => {
   const v = fold(value)
   return list.some((n) => n.trim() !== '' && v.includes(fold(n.trim())))
 }
+
+// The order of the list: most urgent first. Items with the same urgency go by due date, the one
+// that is due first on top and the ones without a date at the end; anything still tied keeps the
+// order it arrived in (the sort is stable).
+export function byUrgency(a: Signal, b: Signal): number {
+  const diff = (b.urgency ?? 0) - (a.urgency ?? 0)
+  if (diff !== 0) return diff
+  return (a.dueAt ?? Infinity) === (b.dueAt ?? Infinity)
+    ? 0
+    : (a.dueAt ?? Infinity) < (b.dueAt ?? Infinity)
+      ? -1
+      : 1
+}
+
+// "#Ventas" and "ventas" are the same channel: no case, accents or "#".
+const channelKey = (name: string): string => fold(name).replace(/^#/, '').trim()
+const inChannels = (channel: string | undefined, list: string[] | undefined): boolean =>
+  !!channel && !!list && list.some((c) => channelKey(c) !== '' && channelKey(c) === channelKey(channel))
 
 // Urgency 0..1 from simple, explainable rules. 0.8 or more is "urgent".
 export function scoreSignal(signal: Signal, ctx: RankingContext): number {
@@ -64,7 +83,9 @@ export function scoreSignal(signal: Signal, ctx: RankingContext): number {
   // An overdue task is always urgent, even with a low priority.
   if (signal.dueAt !== undefined && signal.dueAt < ctx.now)
     score = Math.max(score, URGENT_THRESHOLD)
-  if (fromPriority) score = Math.max(score, PRIORITY_SENDER_SCORE)
+  if (fromPriority || inChannels(signal.channel, ctx.importantChannels)) {
+    score = Math.max(score, PRIORITY_SENDER_SCORE)
+  }
 
   return Math.min(1, Math.max(0, Math.round(score * 100) / 100))
 }

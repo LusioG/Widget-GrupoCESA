@@ -1,6 +1,6 @@
 import { strings } from '@shared/strings'
 import type { Source, TaskPriority } from '@shared/types'
-import { CalendarIcon, ClickUpIcon, GmailIcon, SlackIcon } from './icons'
+import { CalendarLogo, ClickUpLogo, GmailLogo, SlackLogo } from './brandIcons'
 
 const sourceTint: Record<Source, string> = {
   slack: 'text-fuchsia-300 bg-fuchsia-300/10',
@@ -9,11 +9,12 @@ const sourceTint: Record<Source, string> = {
   clickup: 'text-violet-300 bg-violet-300/10'
 }
 
+// The real logo of each app (in its own colors).
 const sourceIcon = {
-  slack: SlackIcon,
-  gmail: GmailIcon,
-  calendar: CalendarIcon,
-  clickup: ClickUpIcon
+  slack: SlackLogo,
+  gmail: GmailLogo,
+  calendar: CalendarLogo,
+  clickup: ClickUpLogo
 }
 
 export function SourceIcon({
@@ -33,7 +34,7 @@ export function SourceTag({ source }: { source: Source }): React.JSX.Element {
     <span
       className={`mt-0.5 flex w-14 shrink-0 flex-col items-center gap-0.5 rounded-md px-1 py-1 text-xs leading-tight font-semibold ${sourceTint[source]}`}
     >
-      <SourceIcon source={source} className="size-4" />
+      <SourceIcon source={source} className="size-5" />
       {strings.sources[source]}
     </span>
   )

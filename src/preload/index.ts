@@ -39,7 +39,8 @@ const api: Api = {
     disconnect: (source) => ipcRenderer.invoke(IPC.accountDisconnect, source),
     listClickUpLists: () => ipcRenderer.invoke(IPC.clickupLists),
     listGmailLabels: () => ipcRenderer.invoke(IPC.gmailLabels),
-    listSlackChannels: () => ipcRenderer.invoke(IPC.slackChannels)
+    listSlackChannels: () => ipcRenderer.invoke(IPC.slackChannels),
+    listSlackPeople: () => ipcRenderer.invoke(IPC.slackPeople)
   },
   items: {
     act: (request) => ipcRenderer.invoke(IPC.itemAction, request),
@@ -53,7 +54,8 @@ const api: Api = {
     setFocus: (enabled) => ipcRenderer.invoke(IPC.focusSet, enabled),
     setWidgetHidden: (hidden) => ipcRenderer.invoke(IPC.widgetHide, hidden),
     quitApp: () => ipcRenderer.invoke(IPC.quitApp),
-    copyClaudeGuide: () => ipcRenderer.invoke(IPC.copyClaudeGuide)
+    copyClaudeGuide: () => ipcRenderer.invoke(IPC.copyClaudeGuide),
+    testNotifications: () => ipcRenderer.invoke(IPC.testNotifications)
   },
   badge: {
     press: () => ipcRenderer.send(IPC.badgePress),

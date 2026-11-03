@@ -1,5 +1,5 @@
 import type { WebClient } from '@slack/web-api'
-import type { Signal, SlackChannel } from '../../../shared/types'
+import type { Signal, SlackChannel, SlackPerson } from '../../../shared/types'
 import { deleteSecret, getSecret, hasSecret, setSecret } from '../../auth/secrets'
 import { getSettings } from '../../settingsStore'
 import { AuthError, type Connector, type ConnectorContext } from '../types'
@@ -285,6 +285,27 @@ export class SlackConnector implements Connector {
     this.buffer.clear()
     recent.forEach((s) => this.buffer.set(s.id, s))
     return [...recent, ...slackFollowups(this.dm, now, getSettings().followups.waitHours)]
+  }
+
+  // The people of the workspace, to choose whose messages to ignore or mark urgent. Each is named the
+  // way `lookups().user` names the sender of a message, so the lists match what the widget shows.
+  async listPeople(): Promise<SlackPerson[]> {
+    const web = this.web ?? (await this.newWebClient())
+    const me = (this.identity ?? JSON.parse(getSecret(KEYS.identity) ?? 'null'))?.userId
+    const out: SlackPerson[] = []
+    let cursor: string | undefined
+    for (let page = 0; page < 5; page++) {
+      const res = await web.users.list({ limit: 200, cursor })
+      for (const u of res.members ?? []) {
+        if (!u.id || u.deleted || u.is_bot || u.id === 'USLACKBOT' || u.id === me) continue
+        if (u.is_restricted && u.is_ultra_restricted) continue // single-channel guests
+        const name = u.profile?.display_name || u.real_name || u.name
+        if (name) out.push({ id: u.id, name })
+      }
+      cursor = res.response_metadata?.next_cursor || undefined
+      if (!cursor) break
+    }
+    return out.sort((a, b) => a.name.localeCompare(b.name))
   }
 
   // Channels the user is in, to choose which ones to ignore.

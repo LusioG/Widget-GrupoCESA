@@ -1,12 +1,14 @@
 import type { BrowserWindow } from 'electron'
 import type { Size } from '../geometry'
+import { PANEL_WIDTH_RANGE } from '../../shared/settingsSchema'
 import { getSettings } from '../settingsStore'
 
 // Base sizes at scale 1.0. The widget and panel scales (Ajustes) multiply them independently,
 // and the page zoom keeps each window's content proportional to its size.
 export const POPUP_BASE: Size = { width: 56, height: 56 }
 export const TAB_BASE: Size = { width: 44, height: 120 }
-export const PANEL_BASE: Size = { width: 420, height: 620 }
+// The width is a setting (Ajustes > Contenedor); this is only the usual height.
+export const PANEL_BASE: Size = { width: PANEL_WIDTH_RANGE.default, height: 620 }
 
 export function scaled(base: Size, scale: number): Size {
   return { width: Math.round(base.width * scale), height: Math.round(base.height * scale) }
@@ -47,7 +49,8 @@ export function usualTabSize(): Size {
 }
 
 export function panelSize(): Size {
-  return scaled(PANEL_BASE, getSettings().panel.scale)
+  const { scale, width } = getSettings().panel
+  return scaled({ width, height: PANEL_BASE.height }, scale)
 }
 
 // Applies zoom (and, for the widget, transparency) from the settings to one window.

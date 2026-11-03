@@ -1,5 +1,5 @@
 import { MAX_CALENDAR_DAYS } from './calendarWindow'
-import { OPACITY_RANGE, SCALE_RANGE } from './settingsSchema'
+import { OPACITY_RANGE, PANEL_WIDTH_RANGE, SCALE_RANGE } from './settingsSchema'
 
 export const CONFIG_FILE_NAME = 'config.json'
 export const CONFIG_ERROR_FILE_NAME = 'config-error.txt'
@@ -35,6 +35,7 @@ Las listas se reemplazan completas (no se combinan).
 | \`widget.scale\` | ${SCALE_RANGE.min} a ${SCALE_RANGE.max} | Tamaño del widget |
 | \`widget.opacity\` | ${OPACITY_RANGE.min} a ${OPACITY_RANGE.max} | Transparencia del widget (1 = opaco) |
 | \`panel.scale\` | ${SCALE_RANGE.min} a ${SCALE_RANGE.max} | Tamaño del panel |
+| \`panel.width\` | ${PANEL_WIDTH_RANGE.min} a ${PANEL_WIDTH_RANGE.max} (px, a tamaño 100 %) | Ancho del panel |
 | \`panel.fullHeight\` | true/false | Panel a toda la altura de la pantalla |
 | \`schedule.workStart\`, \`schedule.workEnd\` | \`"HH:MM"\` | Horario laboral (fuera de él no se avisa) |
 | \`schedule.workDays\` | lista de 0 a 6 (0 = domingo) | Días laborales |
@@ -44,7 +45,8 @@ Las listas se reemplazan completas (no se combinan).
 | \`filters.minLength\` | 0 a 100 | Longitud mínima de un mensaje |
 | \`filters.ignoredSenders\` | lista de textos | Remitentes que se ignoran |
 | \`filters.importantSenders\` | lista de textos | Remitentes prioritarios (siempre urgentes) |
-| \`filters.mutedChannels\` | lista de textos | Canales de Slack silenciados |
+| \`filters.mutedChannels\` | lista de textos (p. ej. \`"#ventas"\`) | Canales de Slack silenciados |
+| \`filters.importantChannels\` | lista de textos (p. ej. \`"#soporte"\`) | Canales de Slack donde toda mención tuya es urgente |
 | \`followups.waitHours\` | 1 a 720 | Horas de espera antes de un seguimiento |
 | \`gmail.labelIds\` | lista de ids (por defecto \`["INBOX"]\`) | Etiquetas de Gmail a vigilar |
 | \`clickup.listIds\` | lista de ids | Listas de ClickUp a vigilar (vacío = todas) |

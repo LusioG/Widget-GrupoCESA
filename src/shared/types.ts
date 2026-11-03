@@ -65,7 +65,8 @@ export type Settings = {
   }
   // The container that opens with all the information.
   // fullHeight: the panel takes the whole usable height of the screen instead of its usual height.
-  panel: { scale: number; fullHeight: boolean }
+  // width: the panel's width in pixels at 100 % size (the size slider scales it together with the height).
+  panel: { scale: number; fullHeight: boolean; width: number }
   schedule: { workStart: string; workEnd: string; workDays: number[] }
   notifications: { enabled: boolean; focusFromCalendar: boolean; sound: boolean }
   filters: {
@@ -73,6 +74,7 @@ export type Settings = {
     ignoredSenders: string[]
     mutedChannels: string[]
     importantSenders: string[]
+    importantChannels: string[] // Slack channels (as "#name") whose mentions are always urgent
   }
   followups: { waitHours: number }
   gmail: { labelIds: string[] } // labels to watch; INBOX by default
@@ -179,7 +181,8 @@ export type AppState = {
   autostart: boolean
 }
 
-export type SnoozeOption = 'hour' | 'tomorrow' | 'monday'
+// forever: no return date; it stays in "Pospuestos" until it is brought back by hand.
+export type SnoozeOption = 'hour' | 'tomorrow' | 'monday' | 'forever'
 
 export type ItemAction =
   // restore: bring a snoozed or dismissed item back; purge: empty it from the trash for good
@@ -200,6 +203,8 @@ export type ClickUpList = {
 }
 export type GmailLabel = { id: string; name: string }
 export type SlackChannel = { id: string; name: string; isPrivate: boolean }
+// A person of the Slack workspace, named the way their messages show up in the widget.
+export type SlackPerson = { id: string; name: string }
 
 // The Google login is shared; each feature is switched on separately.
 export type GoogleFeature = 'calendar' | 'gmail'

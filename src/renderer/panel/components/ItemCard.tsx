@@ -15,7 +15,7 @@ type Props = {
   onActed?: (action: 'dismiss' | 'snooze') => void
 }
 
-const SNOOZE_OPTIONS: SnoozeOption[] = ['hour', 'tomorrow', 'monday']
+const SNOOZE_OPTIONS: SnoozeOption[] = ['hour', 'tomorrow', 'monday', 'forever']
 
 function subtitle(item: Signal, now: number): string | undefined {
   if (item.kind === 'followup') return strings.panel.ago(now - item.occurredAt)

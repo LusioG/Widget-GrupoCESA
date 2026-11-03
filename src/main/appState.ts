@@ -17,7 +17,7 @@ import { hasGoogleCredentials } from './connectors/google/auth'
 import { loadInbox, saveInbox, type InboxRow } from './db/repos'
 import { shouldKeep } from './engine/filters'
 import { isFocusActive, isWorkTime } from './engine/quiet'
-import { scoreSignal } from './engine/ranking'
+import { byUrgency, scoreSignal } from './engine/ranking'
 import { snoozeUntil } from './engine/snooze'
 import { getSettings } from './settingsStore'
 
@@ -76,14 +76,18 @@ export function getState(): AppState {
   )
   const visible = wanted.filter((s) => isVisible(inbox.get(s.id), now))
 
-  const ranking = { now, importantSenders: settings.filters.importantSenders }
+  const ranking = {
+    now,
+    importantSenders: settings.filters.importantSenders,
+    importantChannels: settings.filters.importantChannels
+  }
   const signals = visible
     .map((s): Signal =>
       s.kind === 'meeting'
         ? s
         : { ...s, urgency: scoreSignal(s, ranking), seen: inbox.get(s.id)?.status === 'seen' }
     )
-    .sort((a, b) => (b.urgency ?? 0) - (a.urgency ?? 0))
+    .sort(byUrgency)
 
   const trash = wanted
     .filter((s) => inbox.get(s.id)?.status === 'dismissed')

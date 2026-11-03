@@ -6,6 +6,7 @@ import type { Settings } from './types'
 
 export const SCALE_RANGE = { min: 0.8, max: 1.4 } as const
 export const OPACITY_RANGE = { min: 0.35, max: 1 } as const
+export const PANEL_WIDTH_RANGE = { min: 360, max: 760, default: 420 } as const
 
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)
 const wordList = z.array(z.string().trim().min(1).max(120)).max(200)
@@ -18,7 +19,11 @@ const widget = z.object({
   scale,
   opacity: z.number().min(OPACITY_RANGE.min).max(OPACITY_RANGE.max)
 })
-const panel = z.object({ scale, fullHeight: z.boolean() })
+const panel = z.object({
+  scale,
+  fullHeight: z.boolean(),
+  width: z.number().int().min(PANEL_WIDTH_RANGE.min).max(PANEL_WIDTH_RANGE.max)
+})
 const schedule = z.object({
   workStart: hhmm,
   workEnd: hhmm,
@@ -33,7 +38,8 @@ const filters = z.object({
   minLength: z.number().int().min(0).max(100),
   ignoredSenders: wordList,
   mutedChannels: wordList,
-  importantSenders: wordList
+  importantSenders: wordList,
+  importantChannels: wordList
 })
 const followups = z.object({ waitHours: z.number().int().min(1).max(720) })
 const clickup = z.object({
@@ -121,14 +127,24 @@ export const DEFAULT_WIDGET: Settings['widget'] = {
   scale: 1,
   opacity: 1
 }
-export const DEFAULT_PANEL: Settings['panel'] = { scale: 1, fullHeight: false }
+export const DEFAULT_PANEL: Settings['panel'] = {
+  scale: 1,
+  fullHeight: false,
+  width: PANEL_WIDTH_RANGE.default
+}
 
 export const DEFAULT_SETTINGS: Settings = {
   widget: DEFAULT_WIDGET,
   panel: DEFAULT_PANEL,
   schedule: { workStart: '09:00', workEnd: '18:00', workDays: [1, 2, 3, 4, 5] },
   notifications: { enabled: true, focusFromCalendar: true, sound: true },
-  filters: { minLength: 3, ignoredSenders: [], mutedChannels: [], importantSenders: [] },
+  filters: {
+    minLength: 3,
+    ignoredSenders: [],
+    mutedChannels: [],
+    importantSenders: [],
+    importantChannels: []
+  },
   followups: { waitHours: 48 },
   gmail: { labelIds: ['INBOX'] },
   clickup: {

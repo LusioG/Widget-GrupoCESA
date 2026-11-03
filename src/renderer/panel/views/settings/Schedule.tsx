@@ -1,5 +1,5 @@
 import { strings } from '@shared/strings'
-import { Card, TimeField, Toggle } from '@renderer/components/ui'
+import { Button, Card, TimeField, Toggle } from '@renderer/components/ui'
 import { playNotificationSound } from '@renderer/components/sound'
 import { useAppStore } from '@renderer/store/useAppStore'
 
@@ -102,6 +102,11 @@ export function Schedule(): React.JSX.Element {
               void window.api.settings.update({ notifications: { sound } })
             }}
           />
+        </Row>
+        <Row title={s.testNotifications} hint={s.testNotificationsHint}>
+          <Button variant="ghost" onClick={() => void window.api.system.testNotifications()}>
+            {s.testNotifications}
+          </Button>
         </Row>
         <Row title={s.focusNow} hint={s.focusNowHint}>
           <Toggle

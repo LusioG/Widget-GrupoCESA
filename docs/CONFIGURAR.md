@@ -25,6 +25,7 @@ Las listas se reemplazan completas (no se combinan).
 | `widget.scale` | 0.8 a 1.4 | Tamaño del widget |
 | `widget.opacity` | 0.35 a 1 | Transparencia del widget (1 = opaco) |
 | `panel.scale` | 0.8 a 1.4 | Tamaño del panel |
+| `panel.width` | 360 a 760 (px, a tamaño 100 %) | Ancho del panel |
 | `panel.fullHeight` | true/false | Panel a toda la altura de la pantalla |
 | `schedule.workStart`, `schedule.workEnd` | `"HH:MM"` | Horario laboral (fuera de él no se avisa) |
 | `schedule.workDays` | lista de 0 a 6 (0 = domingo) | Días laborales |
@@ -34,7 +35,8 @@ Las listas se reemplazan completas (no se combinan).
 | `filters.minLength` | 0 a 100 | Longitud mínima de un mensaje |
 | `filters.ignoredSenders` | lista de textos | Remitentes que se ignoran |
 | `filters.importantSenders` | lista de textos | Remitentes prioritarios (siempre urgentes) |
-| `filters.mutedChannels` | lista de textos | Canales de Slack silenciados |
+| `filters.mutedChannels` | lista de textos (p. ej. `"#ventas"`) | Canales de Slack silenciados |
+| `filters.importantChannels` | lista de textos (p. ej. `"#soporte"`) | Canales de Slack donde toda mención tuya es urgente |
 | `followups.waitHours` | 1 a 720 | Horas de espera antes de un seguimiento |
 | `gmail.labelIds` | lista de ids (por defecto `["INBOX"]`) | Etiquetas de Gmail a vigilar |
 | `clickup.listIds` | lista de ids | Listas de ClickUp a vigilar (vacío = todas) |

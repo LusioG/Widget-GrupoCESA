@@ -1,3 +1,4 @@
+import { SNOOZE_FOREVER } from '../../shared/snooze'
 import type { SnoozeOption } from '../../shared/types'
 
 const HOUR = 60 * 60 * 1000
@@ -20,6 +21,8 @@ export function snoozeUntil(option: SnoozeOption, now: Date, workStart: string):
   switch (option) {
     case 'hour':
       return now.getTime() + HOUR
+    case 'forever':
+      return SNOOZE_FOREVER
     case 'tomorrow':
       return atTime(now, 1, workStart)
     case 'monday': {

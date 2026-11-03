@@ -4,6 +4,7 @@ import type {
   GmailLabel,
   GoogleFeature,
   SlackChannel,
+  SlackPerson,
   Source
 } from '../shared/types'
 import { clearSourceSignals, getAccount, publish, setAccount, setSourceSignals } from './appState'
@@ -166,5 +167,8 @@ export const listGmailLabels = (): Promise<GmailLabel[]> =>
 
 export const listSlackChannels = (): Promise<SlackChannel[]> =>
   guarded('slack', () => slack.listChannels(), [])
+
+export const listSlackPeople = (): Promise<SlackPerson[]> =>
+  guarded('slack', () => slack.listPeople(), [])
 
 export { syncNow }

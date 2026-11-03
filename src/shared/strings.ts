@@ -1,4 +1,6 @@
 // All user-facing text lives here so it can be translated later.
+import { isIndefinite } from './snooze'
+
 export const strings = {
   appName: 'Grupo CESA',
   brand: 'GrupoCESA', // shown at the bottom of the panel
@@ -40,7 +42,7 @@ export const strings = {
     selectDone: 'Listo',
     dismiss: 'Descartar',
     snooze: 'Posponer',
-    snoozeOptions: { hour: '1 h', tomorrow: 'Mañana', monday: 'Lunes' },
+    snoozeOptions: { hour: '1 h', tomorrow: 'Mañana', monday: 'Lunes', forever: 'Sin fecha' },
     selectedCount: (n: number): string => (n === 1 ? '1 seleccionado' : `${n} seleccionados`),
     ago: (ms: number): string => {
       const hours = Math.floor(ms / 3_600_000)
@@ -69,6 +71,7 @@ export const strings = {
     snoozedSection: (n: number): string => `Pospuestos (${n})`,
     bringBack: 'Traer ahora',
     returnsIn: (ms: number): string => {
+      if (isIndefinite(ms)) return 'sin fecha de regreso'
       const minutes = Math.max(1, Math.round(ms / 60_000))
       if (minutes < 60) return `vuelve en ${minutes} min`
       const hours = Math.round(minutes / 60)
@@ -137,6 +140,9 @@ export const strings = {
     panel: {
       size: 'Tamaño del contenedor',
       hint: 'Es la ventana que se abre con toda la información. Se aplica al soltar el control.',
+      width: 'Ancho del contenedor',
+      widthHint:
+        'Cuánto mide de ancho a tamaño 100 %. Más ancho muestra los títulos más largos; el límite es el ancho de tu pantalla.',
       reset: 'Restablecer',
       fullHeight: 'Panel a toda la altura',
       fullHeightHint:
@@ -182,6 +188,17 @@ export const strings = {
       slackHint:
         'Marca los canales a ignorar. Los mensajes directos y las menciones directas siguen llegando.',
       needSlack: 'Conecta Slack en Cuentas para elegir canales.',
+      slackUrgentTitle: 'Canales urgentes de Slack',
+      slackUrgentHint:
+        'Marca los canales donde cualquier mención tuya es urgente: sube al tope, se marca en rojo y avisa (con sonido) incluso en modo foco.',
+      urgent: 'urgente',
+      slackPeopleTitle: 'Personas de Slack',
+      slackPeopleHint:
+        'Elige de quién quieres ver los mensajes directos y las menciones: normal, urgente o ignorar. Funciona con los mismos nombres que "Remitentes prioritarios" y "Remitentes a ignorar", así que también se aplica a sus correos de Gmail con ese nombre.',
+      personNormal: 'Normal',
+      personUrgent: 'Urgente',
+      personIgnore: 'Ignorar',
+      needSlackPeople: 'Conecta Slack en Cuentas para elegir personas.',
       calendarTitle: 'Reuniones de Calendar',
       needCalendar: 'Conecta Calendar en Cuentas para elegir hasta cuándo ver reuniones.',
       calendarHint:
@@ -260,8 +277,8 @@ export const strings = {
       widgetPopup: 'Popup flotante',
       widgetTab: (side: 'left' | 'right'): string =>
         `Solapa vertical · ${side === 'left' ? 'izquierda' : 'derecha'}`,
-      panelSize: (scale: number, fullHeight: boolean): string =>
-        `Tamaño ${Math.round(scale * 100)} %${fullHeight ? ' · toda la altura' : ''}`,
+      panelSize: (scale: number, fullHeight: boolean, width?: number): string =>
+        `Tamaño ${Math.round(scale * 100)} %${width !== undefined && width !== 420 ? ` · ancho ${width} px` : ''}${fullHeight ? ' · toda la altura' : ''}`,
       accounts: (connected: number, total: number): string =>
         connected === 0 ? 'Ninguna conectada' : `${connected} de ${total} conectadas`,
       watch: 'Listas, etiquetas, canales y remitentes',
@@ -376,6 +393,9 @@ export const strings = {
       sound: 'Sonido de notificación',
       soundHint:
         'Suena con cada correo o mensaje de Slack nuevo, también los no urgentes, y con lo urgente y las reuniones por empezar. Respeta horario, pausa y foco, aunque las notificaciones del sistema estén apagadas.',
+      testNotifications: 'Probar avisos',
+      testNotificationsHint:
+        'Muestra un aviso de ejemplo de cada fuente (Slack, Gmail, reunión y ClickUp) para ver cómo se ven. Si no aparece ninguno, revisa que Windows no esté en "No molestar".',
       focusFromCalendar: 'Foco automático con bloques "Focus"',
       focusFromCalendarHint:
         'Mientras dure un evento llamado "Focus" del calendario solo avisan los urgentes.',
@@ -434,6 +454,10 @@ export const strings = {
     databaseReset:
       'No se pudo leer el archivo local de datos y se creó uno nuevo. Tus cuentas y ajustes pueden haberse reiniciado.',
     meetingSoon: 'Reunión por empezar',
+    testSlack: 'Ejemplo: Ana te escribió por mensaje directo',
+    testGmail: 'Ejemplo: Factura vencida de un proveedor',
+    testMeeting: 'Ejemplo: Revisión de presupuesto',
+    testClickup: 'Ejemplo: Enviar propuesta (vence hoy)',
     meetingMoved: 'Cambió el horario de una reunión',
     meetingMovedBody: (
       title: string,

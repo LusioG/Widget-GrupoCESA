@@ -21,23 +21,32 @@ import { Header } from '../components/Header'
 import { ItemCard } from '../components/ItemCard'
 import { MeetingCard } from '../components/MeetingCard'
 
-function SectionTitle({ children }: { children: string }): React.JSX.Element {
+function SectionTitle({
+  children,
+  action
+}: {
+  children: string
+  action?: React.ReactNode
+}): React.JSX.Element {
   return (
-    <h2 className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wider text-cesa-mute uppercase">
-      <span className="size-1.5 rounded-full bg-cesa-green" />
-      {children}
-    </h2>
+    <div className="mb-2 flex items-center gap-2">
+      <h2 className="flex flex-1 items-center gap-2 text-xs font-semibold tracking-wider text-cesa-mute uppercase">
+        <span className="size-1.5 rounded-full bg-cesa-green" />
+        {children}
+      </h2>
+      {action}
+    </div>
   )
 }
 
 // "miércoles, 30 oct": the heading of a day more than a day ahead.
 const dayLabel = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' })
 
-// The small round buttons of the toolbar above the list (select, refresh).
+// The small round buttons: refresh in the bar above the list, select next to the list title.
 const toolbarChip =
   'flex min-h-6 cursor-pointer items-center gap-1 rounded-full border border-cesa-line px-2.5 py-0.5 text-cesa-ink transition hover:border-cesa-green hover:text-cesa-green disabled:cursor-default'
 
-const SNOOZE_OPTIONS: SnoozeOption[] = ['hour', 'tomorrow', 'monday']
+const SNOOZE_OPTIONS: SnoozeOption[] = ['hour', 'tomorrow', 'monday', 'forever']
 const UNDO_VISIBLE_MS = 6000
 const MIN_REFRESH_MS = 600 // so a very fast refresh still visibly "did something"
 
@@ -160,6 +169,18 @@ export function Home(): React.JSX.Element {
         ? `${strings.panel.focusNotice} · ${summary}`
         : summary
   const hasSelectable = items.length > 0 || followups.length > 0
+  // "Seleccionar" sits on the same line as the first list title ("Pendientes y novedades").
+  const selectButton = (
+    <button
+      type="button"
+      aria-pressed={selecting}
+      onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+      className={`${toolbarChip} ${selecting ? 'border-cesa-green text-cesa-green' : ''}`}
+    >
+      <CheckSquareIcon className="size-3.5" />
+      {selecting ? strings.panel.selectDone : strings.panel.select}
+    </button>
+  )
 
   return (
     <>
@@ -181,17 +202,6 @@ export function Home(): React.JSX.Element {
                   ? strings.panel.updated(now - sync.lastSyncAt)
                   : strings.panel.noUpdateYet}
               </span>
-              {hasSelectable && (
-                <button
-                  type="button"
-                  aria-pressed={selecting}
-                  onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
-                  className={`${toolbarChip} ${selecting ? 'border-cesa-green text-cesa-green' : ''}`}
-                >
-                  <CheckSquareIcon className="size-3.5" />
-                  {selecting ? strings.panel.selectDone : strings.panel.select}
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => void refresh()}
@@ -283,13 +293,17 @@ export function Home(): React.JSX.Element {
           {meetings.length > 0 && items.length > 0 && <DotsDivider />}
           {items.length > 0 && (
             <section>
-              <SectionTitle>{strings.panel.pending}</SectionTitle>
+              <SectionTitle action={hasSelectable ? selectButton : undefined}>
+                {strings.panel.pending}
+              </SectionTitle>
               {renderItems(items)}
             </section>
           )}
           {followups.length > 0 && (
             <section>
-              <SectionTitle>{strings.panel.followups}</SectionTitle>
+              <SectionTitle action={items.length === 0 ? selectButton : undefined}>
+                {strings.panel.followups}
+              </SectionTitle>
               {renderItems(followups)}
             </section>
           )}

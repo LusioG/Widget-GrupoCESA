@@ -18,6 +18,7 @@ export const IPC = {
   slackConnect: 'account:slack-connect',
   gmailLabels: 'account:gmail-labels',
   slackChannels: 'account:slack-channels',
+  slackPeople: 'account:slack-people',
   autostartSet: 'system:autostart-set',
   focusSet: 'system:focus-set',
   itemAction: 'item:action',
@@ -37,5 +38,6 @@ export const IPC = {
   updateCheck: 'update:check',
   updateInstall: 'update:install',
   quitApp: 'system:quit',
-  copyClaudeGuide: 'system:copy-claude-guide'
+  copyClaudeGuide: 'system:copy-claude-guide',
+  testNotifications: 'system:test-notifications'
 } as const

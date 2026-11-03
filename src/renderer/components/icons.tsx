@@ -155,37 +155,6 @@ export const SlidersIcon = (p: IconProps): React.JSX.Element => (
   </Icon>
 )
 
-// Simplified one-color marks of each platform (they take the color of the text around them).
-export const GmailIcon = (p: IconProps): React.JSX.Element => (
-  <Icon {...p}>
-    <rect x="2.5" y="4.5" width="19" height="15" rx="2" />
-    <path d="m3 7 9 6.5L21 7" />
-  </Icon>
-)
-
-export const SlackIcon = (p: IconProps): React.JSX.Element => (
-  <Icon {...p}>
-    <path d="M9.5 3 8 21" />
-    <path d="M16 3l-1.5 18" />
-    <path d="M4 9h17" />
-    <path d="M3 15.5h17" />
-  </Icon>
-)
-
-export const ClickUpIcon = (p: IconProps): React.JSX.Element => (
-  <Icon {...p}>
-    <path d="m4 16 4.2-3.4a5.5 5.5 0 0 1 7.6 0L20 16" />
-    <path d="m7.5 8.5 3.7-3.2a1.2 1.2 0 0 1 1.6 0l3.7 3.2" />
-  </Icon>
-)
-
-export const CalendarIcon = (p: IconProps): React.JSX.Element => (
-  <Icon {...p}>
-    <rect x="3.5" y="4.5" width="17" height="16" rx="2" />
-    <path d="M3.5 9.5h17M8 2.5v4M16 2.5v4" />
-  </Icon>
-)
-
 // A sheet with lines of text: the summary of the day.
 export const FileTextIcon = (p: IconProps): React.JSX.Element => (
   <Icon {...p}>

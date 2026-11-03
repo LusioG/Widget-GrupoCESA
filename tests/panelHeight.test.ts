@@ -50,6 +50,6 @@ describe('the "toda la altura" setting of the panel', () => {
   it('settings saved before it existed get it off', () => {
     const old = { ...DEFAULT_SETTINGS, panel: { scale: 1.2 } }
     const merged = { ...old, panel: { ...DEFAULT_PANEL, ...old.panel } }
-    expect(settingsSchema.parse(merged).panel).toEqual({ scale: 1.2, fullHeight: false })
+    expect(settingsSchema.parse(merged).panel).toEqual({ scale: 1.2, fullHeight: false, width: 420 })
   })
 })

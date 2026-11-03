@@ -10,6 +10,7 @@ import type {
   ItemAction,
   PanelView,
   SlackChannel,
+  SlackPerson,
   Source,
   UpdateCheckResult
 } from './types'
@@ -36,6 +37,7 @@ export interface Api {
     listClickUpLists(): Promise<ClickUpList[]>
     listGmailLabels(): Promise<GmailLabel[]>
     listSlackChannels(): Promise<SlackChannel[]>
+    listSlackPeople(): Promise<SlackPerson[]>
   }
   items: {
     act(request: ItemAction): Promise<void>
@@ -54,6 +56,8 @@ export interface Api {
     quitApp(): Promise<void>
     // Copies the instructions an AI assistant needs to configure the widget.
     copyClaudeGuide(): Promise<void>
+    // Shows one example notification of each source.
+    testNotifications(): Promise<void>
   }
   // The page only forwards the pointer; the main process tells a click from a drag.
   badge: {

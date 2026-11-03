@@ -51,7 +51,7 @@ const rows: Record<
   },
   panel: {
     icon: PanelRightIcon,
-    summary: ({ settings }) => sm.panelSize(settings.panel.scale, settings.panel.fullHeight)
+    summary: ({ settings }) => sm.panelSize(settings.panel.scale, settings.panel.fullHeight, settings.panel.width)
   },
   accounts: {
     icon: UsersIcon,

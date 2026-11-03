@@ -25,7 +25,7 @@ export const itemActionSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('snooze'),
     ids: itemIds,
-    until: z.enum(['hour', 'tomorrow', 'monday'])
+    until: z.enum(['hour', 'tomorrow', 'monday', 'forever'])
   })
 ])
 

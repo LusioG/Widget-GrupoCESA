@@ -1,8 +1,13 @@
-import { Notification } from 'electron'
+import { Notification, nativeImage } from 'electron'
+import cesaLogo from '../../resources/icon.png?asset'
+import calendarIcon from '../../resources/notify/calendar.png?asset'
+import clickupIcon from '../../resources/notify/clickup.png?asset'
+import gmailIcon from '../../resources/notify/gmail.png?asset'
+import slackIcon from '../../resources/notify/slack.png?asset'
 import { IPC } from '../shared/ipcChannels'
 import { beforeText, meetingMove } from '../shared/meetingMove'
 import { strings } from '../shared/strings'
-import type { AppState, Signal } from '../shared/types'
+import type { AppState, Signal, Source } from '../shared/types'
 import { getState, onStateChange } from './appState'
 import {
   movedKey,
@@ -17,6 +22,17 @@ import { getBadgeWindow } from './windows/badge'
 import { openPanel } from './windows/panel'
 
 const MAX_INDIVIDUAL = 3
+
+// Each notification carries the logo of the app it comes from (a ring in that app's color, 256 px so
+// it stays sharp on high-DPI screens). A summary of several mixes sources, so it uses the CESA logo.
+const icon = (path: string): Electron.NativeImage => nativeImage.createFromPath(path)
+const SOURCE_ICON: Record<Source | 'cesa', Electron.NativeImage> = {
+  slack: icon(slackIcon),
+  gmail: icon(gmailIcon),
+  calendar: icon(calendarIcon),
+  clickup: icon(clickupIcon),
+  cesa: icon(cesaLogo)
+}
 const clock = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' })
 
 // Ids already handled, so each item notifies at most once.
@@ -26,12 +42,27 @@ const soundHandled = new Set<string>()
 // Changes of a meeting's time already told (see movedKey).
 const movedHandled = new Set<string>()
 
-function show(title: string, body: string): void {
+function show(title: string, body: string, source: Source | 'cesa' = 'cesa'): void {
   if (!Notification.isSupported()) return
   // Silent: the widget plays its own sound (configurable), so Windows must not add a second one.
-  const n = new Notification({ title, body, silent: true })
+  const n = new Notification({ title, body, silent: true, icon: SOURCE_ICON[source] })
   n.on('click', () => openPanel())
   n.show()
+}
+
+// "Probar avisos" (Ajustes): one example notification of each source, a moment apart, so the
+// person can see how they look and that Windows shows them. It ignores the quiet rules on purpose.
+const TEST_GAP_MS = 1500
+export function showTestNotifications(): void {
+  const examples: [string, string, Source][] = [
+    [strings.sources.slack, strings.notify.testSlack, 'slack'],
+    [strings.sources.gmail, strings.notify.testGmail, 'gmail'],
+    [strings.notify.meetingSoon, strings.notify.testMeeting, 'calendar'],
+    [strings.sources.clickup, strings.notify.testClickup, 'clickup']
+  ]
+  examples.forEach(([title, body, source], i) =>
+    setTimeout(() => show(title, body, source), i * TEST_GAP_MS)
+  )
 }
 
 // One sound per batch, however many notifications it holds.
@@ -83,7 +114,7 @@ function onState(state: AppState): void {
     playSound()
   }
   if (moved.length > 0 && state.settings.notifications.enabled) {
-    for (const s of moved) show(strings.notify.meetingMoved, movedBody(s, now))
+    for (const s of moved) show(strings.notify.meetingMoved, movedBody(s, now), s.source)
   }
 
   const due = state.signals.filter((s) => !handled.has(s.id) && shouldNotify(s, ctx, now))
@@ -98,7 +129,7 @@ function onState(state: AppState): void {
   }
   for (const s of due) {
     const { title, body } = describe(s)
-    show(title, body)
+    show(title, body, s.source)
   }
 }
 
