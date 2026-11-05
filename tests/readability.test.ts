@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { cleanMessageText, extractText, unflow, unwrapCutLines } from '../src/main/connectors/gmail/body'
+import { ellipsize } from '../src/main/connectors/gmail/lists'
 import { toRichParts } from '../src/shared/richText'
 
 // The plain text of a real message of the "desarrollo" list: the sender's program cut the lines
@@ -61,6 +62,48 @@ describe('lines cut by the sender\'s program', () => {
       body: { data }
     })
     expect(text).toBe('Uno dos tres\ncuatro')
+  })
+})
+
+// The message of Pablo: cut at 73 characters, and the last cut came before "lo" (2 letters), which
+// would have made 76. Gmail shows it as ONE line; it must not end up split before "lo".
+const P1 = 'Dale guiidote, anda avisando. Pruébenlo internamente. Si todo sale ok, la'
+const P2 = 'semana que viene nos juntamos y le damos vida para que los chicos de Omni'
+const P3 = 'lo puedan testear.'
+
+describe('the message of Pablo (a cut right at the edge)', () => {
+  it('is one line again, as in Gmail', () => {
+    expect(P1.length).toBe(73)
+    expect(P2.length).toBe(73)
+    expect(unwrapCutLines([P1, P2, P3].join('\n'))).toBe(`${P1} ${P2} ${P3}`)
+  })
+
+  it('does not join after a line that was clearly ended by the author', () => {
+    const typed = ['Hola equipo', P3].join('\n')
+    expect(unwrapCutLines(typed)).toBe(typed)
+  })
+})
+
+describe('a quote that is cut to fit', () => {
+  const text = 'Buenas, voy a hacer unas pequeñas pruebas de migracion de zoho desk a zammad, sobretodo ver si puedo armar'
+
+  it('ends with "…" and between words, never in the middle of one', () => {
+    const short = ellipsize(text, 90)
+    expect(short.endsWith('…')).toBe(true)
+    expect(short.length).toBeLessThanOrEqual(91)
+    expect(short).not.toMatch(/ve…$/) // "sobretodo ve" was cut in the middle of "ver"
+    expect(text.startsWith(short.slice(0, -1))).toBe(true)
+    expect(text.charAt(short.length - 1)).toBe(' ')
+  })
+
+  it('leaves a short text as it is', () => {
+    expect(ellipsize('Se cayó el sistema', 90)).toBe('Se cayó el sistema')
+    expect(ellipsize('x'.repeat(90), 90)).toBe('x'.repeat(90))
+  })
+
+  it('cuts a word that is too long on its own, instead of dropping nearly everything', () => {
+    const long = 'a'.repeat(200)
+    expect(ellipsize(long, 90)).toBe(`${'a'.repeat(90)}…`)
   })
 })
 

@@ -161,7 +161,10 @@ export function splitSignature(text: string): { main: string; signature: string 
 // break the author typed (a short line, a list item, an empty line) is left alone.
 const CUT_MIN = 58 // shorter lines were ended by the author
 const CUT_MAX = 80 // longer lines were not cut by anyone
-const CUT_WIDTH = 76 // where the programs cut: the next word did not fit within this
+// Where the programs cut: a line is a cut one if the next word did not fit within this. Real
+// messages say it is a little under 76: one kept "…ok, la" (73 characters) and then cut before a
+// word of 2 letters that would have made 76.
+const CUT_WIDTH = 73
 const NEW_BLOCK = /^\s*([-*•>|#]|\d+[.)]|[a-z][.)])\s/i // a list item, a quote, a heading
 
 function isCut(previous: string, next: string): boolean {

@@ -181,6 +181,13 @@ const RAW_CUT_MESSAGE = [
   'Para ver este debate, visita https://groups.google.com/a/grupocesa.net/d/msgid/desarrollo/abc.'
 ].join('\n')
 
+// A reply cut at 73 characters, the last cut right at the edge (before "lo").
+const RAW_CUT_REPLY = [
+  'Dale guiidote, anda avisando. Pruébenlo internamente. Si todo sale ok, la',
+  'semana que viene nos juntamos y le damos vida para que los chicos de Omni',
+  'lo puedan testear.'
+].join('\n')
+
 // The conversations the demo opens, so the chat window can be seen without Gmail.
 export function buildFakeThread(threadId: string, now: number): ThreadView | null {
   const gmailUrl = `https://mail.google.com/mail/u/0/#all/${threadId}`
@@ -208,6 +215,18 @@ export function buildFakeThread(threadId: string, now: number): ThreadView | nul
           from: { name: 'Guido Lapiy', address: 'guido@grupocesa.net' },
           at: now - 28 * HOUR,
           ...cleanMessageText(RAW_CUT_MESSAGE),
+          mine: false,
+          unread: false
+        },
+        {
+          id: 'm0c',
+          from: { name: 'Pablo Calvo', address: 'pablo@grupocesa.net' },
+          at: now - 27 * HOUR,
+          ...cleanMessageText(RAW_CUT_REPLY),
+          replyTo: {
+            name: 'Guido Lapiy',
+            snippet: 'Buenas, voy a hacer unas pequeñas pruebas de migracion de zoho desk a zammad, sobretodo…'
+          },
           mine: false,
           unread: false
         },

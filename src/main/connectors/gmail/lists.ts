@@ -115,6 +115,14 @@ export function threadToSignal(input: {
 
 const REPLY_SNIPPET_MAX = 90
 
+// A text cut to fit says so ("…") and is cut between words, not in the middle of one.
+export function ellipsize(text: string, max: number): string {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`
+}
+
 const messageKey = (id: string | undefined): string => (id ?? '').trim().toLowerCase()
 
 export function buildThreadView(input: {
@@ -152,7 +160,7 @@ export function buildThreadView(input: {
         parentFrom && {
           replyTo: {
             name: parentFrom.name || parentFrom.address,
-            snippet: clean(textOf(parent)).slice(0, REPLY_SNIPPET_MAX)
+            snippet: ellipsize(clean(textOf(parent)), REPLY_SNIPPET_MAX)
           }
         })
     }
