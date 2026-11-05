@@ -16,6 +16,7 @@ import { ChevronRightIcon } from '@renderer/components/icons'
 import { Button, Card, Segment, TextField, Toggle } from '@renderer/components/ui'
 import { useAppStore } from '@renderer/store/useAppStore'
 import { CalendarHorizon } from './CalendarHorizon'
+import { DistributionLists } from './DistributionLists'
 import { Filters } from './Filters'
 
 const s = strings.settings.watch
@@ -653,6 +654,8 @@ export function Watch(): React.JSX.Element {
           }}
         />
       </Section>
+
+      <DistributionLists />
 
       <Section
         title={s.slackTitle}

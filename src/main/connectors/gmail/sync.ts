@@ -1,5 +1,6 @@
 import type { Signal } from '../../../shared/types'
 import { findFollowups, type IncomingReply, type SentMessage } from '../../engine/followups'
+import { belongsToList } from './lists'
 import { emailToSignal, threadUrl } from './mapper'
 import type { GmailApi, GmailMessage } from './types'
 
@@ -11,7 +12,7 @@ const CONCURRENCY = 5
 
 export type GmailCursor = { historyId: string; labels: string }
 
-async function mapLimit<T, R>(
+export async function mapLimit<T, R>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<R>
@@ -28,9 +29,15 @@ async function mapLimit<T, R>(
   return out
 }
 
+// Mail that came through a followed distribution list is shown in its own section (one item per
+// conversation), so it is not also an individual email here.
+const individual = (msg: GmailMessage, watched: string[], lists: readonly string[]): Signal | null =>
+  belongsToList(msg, lists) ? null : emailToSignal(msg, watched)
+
 async function fullSync(
   api: GmailApi,
   watched: string[],
+  lists: readonly string[],
   now: number
 ): Promise<{ signals: Map<string, Signal>; historyId: string }> {
   // Take the history id first: anything that arrives while we list shows up in the next delta.
@@ -42,7 +49,7 @@ async function fullSync(
   const messages = await mapLimit([...ids], CONCURRENCY, (id) => api.getMessage(id))
   const signals = new Map<string, Signal>()
   for (const msg of messages) {
-    const signal = msg && now - msg.internalDate <= MAX_AGE_MS ? emailToSignal(msg, watched) : null
+    const signal = msg && now - msg.internalDate <= MAX_AGE_MS ? individual(msg, watched, lists) : null
     if (signal) signals.set(signal.id, signal)
   }
   return { signals, historyId }
@@ -55,11 +62,15 @@ export async function syncEmails(input: {
   cursor: GmailCursor | undefined
   cached: Signal[] // email signals from the previous sync
   now: number
+  lists?: readonly string[] // addresses of the followed distribution lists
 }): Promise<{ signals: Signal[]; cursor: GmailCursor }> {
   const { api, watched, cursor, now } = input
-  const labelsKey = [...watched].sort().join(',')
+  const lists = input.lists ?? []
+  // Following another list changes what counts as an individual email: start over.
+  const labelsKey =
+    [...watched].sort().join(',') + (lists.length > 0 ? `|${[...lists].sort().join(',')}` : '')
   const start = (): Promise<{ signals: Map<string, Signal>; historyId: string }> =>
-    fullSync(api, watched, now)
+    fullSync(api, watched, lists, now)
 
   let signals: Map<string, Signal>
   let historyId: string
@@ -76,7 +87,7 @@ export async function syncEmails(input: {
       const messages = await mapLimit(touched, CONCURRENCY, (id) => api.getMessage(id))
       touched.forEach((id, i) => {
         const msg = messages[i]
-        const signal = msg ? emailToSignal(msg, watched) : null
+        const signal = msg ? individual(msg, watched, lists) : null
         if (signal) signals.set(signal.id, signal)
         else signals.delete(`gmail:${id}`) // read, archived, deleted or no longer relevant
       })

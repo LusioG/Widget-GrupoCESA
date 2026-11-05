@@ -9,9 +9,11 @@ import {
   connectClickUp,
   connectGoogle,
   connectSlack,
+  connectSlackOAuth,
   disconnectAccount,
   listClickUpLists,
   listGmailLabels,
+  listGmailLists,
   listSlackChannels,
   listSlackPeople,
   saveGoogleClient
@@ -25,6 +27,7 @@ import {
   undoLastChange
 } from '../appState'
 import { setAutostart } from '../autostart'
+import { logError, logWarn } from '../logger'
 import { deleteSecret, getSecret, setSecret } from '../auth/secrets'
 import {
   getBriefing,
@@ -35,11 +38,13 @@ import {
 import { refreshAll } from '../scheduler'
 import { checkForUpdatesNow, installUpdateNow } from '../updater'
 import { showTestNotifications } from '../notifier'
+import { openThread } from '../threads'
 import { applySettingsPatch } from '../settingsApply'
 import { getSettings } from '../settingsStore'
 import { registerBadgeGestures } from '../windows/badge'
 import { closeBriefingWindow, fitBriefingWindow } from '../windows/briefing'
 import { closePanel, isPanelOpen, openPanel, togglePanel } from '../windows/panel'
+import { closeThreadWindow, currentThreadView } from '../windows/thread'
 import {
   briefingDateSchema,
   briefingHeightSchema,
@@ -50,7 +55,8 @@ import {
   googleFeatureSchema,
   itemActionSchema,
   slackTokenSchema,
-  sourceSchema
+  sourceSchema,
+  threadOpenSchema
 } from './schemas'
 
 const invalid: ActionResult = { ok: false, error: 'Datos no válidos.' }
@@ -107,8 +113,30 @@ export function registerIpc(): void {
     return token.success ? connectSlack(token.data) : invalid
   })
 
+  ipcMain.handle(IPC.slackConnectOAuth, async (): Promise<ActionResult> => {
+    const result = await connectSlackOAuth()
+    openPanel('settings') // the browser took the focus and hid the panel
+    return result
+  })
+
   ipcMain.handle(IPC.clickupLists, () => listClickUpLists())
   ipcMain.handle(IPC.gmailLabels, () => listGmailLabels())
+  ipcMain.handle(IPC.gmailLists, () => listGmailLists())
+
+  ipcMain.handle(IPC.threadOpen, async (_event, raw) => {
+    const request = threadOpenSchema.safeParse(raw)
+    if (!request.success) {
+      logWarn('thread', 'refused to open a conversation: the request was not valid')
+      return
+    }
+    try {
+      await openThread(request.data)
+    } catch (error) {
+      logError('thread', 'could not open the conversation window', error)
+    }
+  })
+  ipcMain.handle(IPC.threadCurrent, () => currentThreadView())
+  ipcMain.on(IPC.threadClose, () => closeThreadWindow())
   ipcMain.handle(IPC.slackChannels, () => listSlackChannels())
   ipcMain.handle(IPC.slackPeople, () => listSlackPeople())
 

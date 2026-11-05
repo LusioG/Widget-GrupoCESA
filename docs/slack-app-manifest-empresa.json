@@ -1,0 +1,25 @@
+{
+  "display_information": {
+    "name": "Widget GrupoCESA",
+    "description": "Lee tus mensajes directos y menciones para mostrarlos en el widget de escritorio. Solo lectura."
+  },
+  "oauth_config": {
+    "redirect_urls": ["grupocesa-widget://slack"],
+    "pkce_enabled": true,
+    "scopes": {
+      "user": [
+        "search:read",
+        "channels:read",
+        "groups:read",
+        "im:read",
+        "mpim:read",
+        "users:read"
+      ]
+    }
+  },
+  "settings": {
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}

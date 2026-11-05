@@ -6,10 +6,13 @@ import { AuthError } from '../types'
 import { apiDisabledInfo, httpStatus } from './errors'
 
 // Narrowest read-only scopes that cover what each feature needs.
-// gmail.metadata: headers and labels only, never the message body.
+// gmail.readonly: read-only, but it can search and read message text. The distribution lists need
+// that (searching by list and showing a conversation as a chat); the narrower gmail.metadata only
+// gives headers and labels. Message text is read only when the user opens a conversation, and it
+// is never stored or sent to the AI.
 export const GOOGLE_SCOPES: Record<GoogleFeature, string> = {
   calendar: 'https://www.googleapis.com/auth/calendar.events.readonly',
-  gmail: 'https://www.googleapis.com/auth/gmail.metadata'
+  gmail: 'https://www.googleapis.com/auth/gmail.readonly'
 }
 
 const KEYS = {

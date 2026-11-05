@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { strings } from '@shared/strings'
 import type { Signal, SnoozeOption } from '@shared/types'
 import { dueLabel } from '@shared/dueLabel'
-import { AlertIcon, ClockIcon, XIcon } from '@renderer/components/icons'
+import { AlertIcon, ClockIcon, UsersIcon, XIcon } from '@renderer/components/icons'
 import { PriorityFlag, SourceTag } from '@renderer/components/SourceBadge'
 
 type Props = {
@@ -40,10 +40,17 @@ export function ItemCard({
   const urgent = (item.urgency ?? 0) >= 0.8
   const sub = subtitle(item, now)
 
+  // A conversation of a distribution list opens in its own window, as a chat; anything else opens
+  // the original in the browser.
   const open = (): void => {
+    if (item.threadId) {
+      void window.api.threads.open({ threadId: item.threadId, signalId: item.id, title: item.title })
+      return
+    }
     window.api.openExternal(item.url)
     window.api.items.act({ ids: [item.id], action: 'seen' })
   }
+  const unread = item.threadId && !item.seen ? (item.unread ?? 0) : 0
 
   return (
     <div
@@ -69,9 +76,15 @@ export function ItemCard({
         )}
         <SourceTag source={item.source} />
         <span className="min-w-0 flex-1">
+          {item.list && (
+            <span className="mb-0.5 flex items-center gap-1 truncate text-xs text-cesa-mute">
+              <UsersIcon className="size-3.5 shrink-0" />
+              <span className="truncate">{item.list.name}</span>
+            </span>
+          )}
           <span
             title={item.title}
-            className={`line-clamp-2 text-sm break-words ${item.seen ? 'text-cesa-mute' : 'text-cesa-ink'}`}
+            className={`line-clamp-2 text-sm break-words ${item.seen ? 'text-cesa-mute' : 'text-cesa-ink'} ${unread > 0 ? 'font-semibold' : ''}`}
           >
             {item.title}
           </span>
@@ -90,12 +103,23 @@ export function ItemCard({
             </span>
           )}
         </span>
-        {urgent && (
-          <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full border border-cesa-alert/50 px-1.5 py-0.5 text-xs font-semibold text-cesa-alert-text">
-            <AlertIcon className="size-3" />
-            {strings.panel.urgent}
-          </span>
-        )}
+        <span className="mt-0.5 flex shrink-0 flex-col items-end gap-1">
+          {urgent && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-cesa-alert/50 px-1.5 py-0.5 text-xs font-semibold text-cesa-alert-text">
+              <AlertIcon className="size-3" />
+              {strings.panel.urgent}
+            </span>
+          )}
+          {unread > 0 && (
+            <span
+              title={strings.panel.listUnread(unread)}
+              aria-label={strings.panel.listUnread(unread)}
+              className="inline-flex min-w-5 items-center justify-center gap-1 rounded-full bg-cesa-green px-1.5 py-0.5 text-xs font-bold text-cesa-950"
+            >
+              {unread}
+            </span>
+          )}
+        </span>
       </button>
 
       {!selecting && (

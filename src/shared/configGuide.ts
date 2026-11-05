@@ -49,6 +49,8 @@ Las listas se reemplazan completas (no se combinan).
 | \`filters.importantChannels\` | lista de textos (p. ej. \`"#soporte"\`) | Canales de Slack donde toda mención tuya es urgente |
 | \`followups.waitHours\` | 1 a 720 | Horas de espera antes de un seguimiento |
 | \`gmail.labelIds\` | lista de ids (por defecto \`["INBOX"]\`) | Etiquetas de Gmail a vigilar |
+| \`gmail.lists\` | lista de \`{"address": "soporte@empresa.com", "name": "Soporte", "urgent": false}\` | Listas de distribución que se siguen (sección propia en el panel); \`urgent\`: todo lo que llega por la lista es urgente |
+| \`gmail.listDays\` | 1, 3 o 7 (por defecto 7) | Días hacia atrás en que se ven los correos sin leer de las listas de distribución |
 | \`clickup.listIds\` | lista de ids | Listas de ClickUp a vigilar (vacío = todas) |
 | \`clickup.dueWindowDays\` | 1 a 90 | Tareas que vencen en los próximos N días |
 | \`clickup.minPriority\` | \`"any"\`, \`"normal"\`, \`"high"\`, \`"urgent"\` | Prioridad mínima |

@@ -364,7 +364,8 @@ describe('Gmail module is read-only', () => {
       'labels.list',
       'messages.get',
       'messages.list',
-      'threads.get'
+      'threads.get',
+      'threads.list'
     ])
   })
 
@@ -375,16 +376,28 @@ describe('Gmail module is read-only', () => {
     }
   })
 
-  it('asks Google only for header metadata, never full bodies', () => {
+  it('reads message text only when a conversation is opened, never raw', () => {
     const api = sources.find((s) => s.file === 'api.ts')!.text
-    expect(api).not.toMatch(/format:\s*'(full|raw)'/)
-    expect(api.match(/format:\s*'metadata'/g)).toHaveLength(2) // messages.get + threads.get
+    expect(api).not.toMatch(/format:\s*'raw'/)
+    // Full messages are asked for in exactly one place: the conversation window (withBody).
+    expect(api.match(/format:\s*'full'/g)).toHaveLength(1)
+    expect(api).toMatch(/withBody\s*\?\s*\{\s*format:\s*'full'/)
+    expect(api).toMatch(/\.\.\.\(withBody && \{\s*body: extractText/)
+    // Everything else (sync, followups, discovery of lists) stays on headers.
+    expect(api.match(/format:\s*'metadata'/g)).toHaveLength(3)
   })
 
-  it('requests the narrowest Gmail scope', () => {
+  it('does not decode message bodies anywhere but the conversation code', () => {
+    for (const { file, text } of sources) {
+      if (['api.ts', 'body.ts'].includes(file)) continue
+      expect(text, file).not.toMatch(/extractText|\.payload\b/)
+    }
+  })
+
+  it('requests a read-only Gmail scope: it can read, never write, send or delete', () => {
     const auth = readFileSync(join(__dirname, '../src/main/connectors/google/auth.ts'), 'utf8')
-    expect(auth).toContain('gmail.metadata')
-    expect(auth).not.toMatch(/gmail\.(readonly|modify|send|compose)|mail\.google\.com\/'/)
+    expect(auth).toContain('auth/gmail.readonly')
+    expect(auth).not.toMatch(/gmail\.(modify|send|compose|insert|labels|settings)|mail\.google\.com\/'/)
     expect(auth).not.toMatch(/calendar['"]|calendar\.readonly|calendar\.events['"]/)
   })
 })

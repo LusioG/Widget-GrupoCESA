@@ -39,6 +39,7 @@ const stateWith = (
     gmail: { status: 'disconnected' }
   },
   googleHasCredentials: false,
+  slackOAuth: false,
   aiKeySet: false,
   appVersion: '1.0.0',
   updateReady: null,

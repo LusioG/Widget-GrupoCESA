@@ -31,6 +31,16 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
     En modo foco solo pulsa un mensaje urgente.
   - **Pulso verde:** una reunión empieza en menos de 10 minutos o está en curso (no en modo foco).
   - El borde rojo del widget sigue marcando que hay algo urgente, sea del tipo que sea.- **Panel** con reuniones (botón _Unirse_, amarillo en las de hoy y verde en las de otros días), pendientes ordenados por urgencia y "Esperando respuesta".
+- **Listas de distribución** (grupos de Google a los que escribe más de una persona): en **Fuentes y
+  filtros** eliges las que quieres seguir (el widget las busca en tus correos recientes, o las añades
+  por dirección) y cuántos días hacia atrás ver (1, 3 o 7). Aparecen **arriba del panel**, una tarjeta por
+  conversación, con el primer mensaje y un círculo con los mensajes sin leer. Al tocarla se abre una
+  **ventana aparte con la conversación como un chat**: quién escribió, a quién responde y la hora; los
+  mensajes largos se pliegan ("Ver más"), la firma queda detrás de "···", se quita el pie de Google
+  Groups, los enlaces son botones cortos y los adjuntos aparecen como mini enlaces que abren Gmail.
+  Cada lista puede marcarse **urgente**, y valen tus remitentes prioritarios y a ignorar. Requiere el
+  permiso de **solo lectura** de Gmail: quien ya tenía Gmail conectado debe tocar **Volver a conectar**
+  una vez. Los enlaces abren la cuenta de Gmail que lee el widget, no la primera del navegador.
 - **Acciones por elemento:** abrir el original, posponer (1 h / mañana / lunes), descartar, y en lote.
   Tras descartar o posponer aparece **Deshacer** unos segundos. Lo pospuesto queda en una lista
   **"Pospuestos"** al final del panel, con cuándo vuelve y un botón _Traer ahora_.
@@ -174,9 +184,19 @@ Notas importantes:
 
 ### Slack
 
-Cada usuario crea su propia app de Slack (una vez). El widget **consulta Slack cada 60 s** con solo el
-_User OAuth Token_ (`xoxp-`): no usa Socket Mode ni _App-Level Token_. Un mensaje nuevo puede tardar
-hasta un minuto (más lo que tarde el índice de búsqueda de Slack) en aparecer. La tarjeta de Slack incluye esta guía:
+**Cómo se conecta (lo normal):** en **Ajustes → Cuentas → Slack** toca **Conectar con Slack**. Se abre
+Slack en el navegador, con la sesión que tengas abierta ahí: elige el workspace de la empresa y toca
+**Permitir**. El navegador te pregunta si abrir el widget y vuelves con la cuenta conectada; la tarjeta
+dice **"Conectado como …"** para que veas que se vinculó la cuenta correcta. No hay que crear ninguna app ni
+copiar tokens: todos usan la **app única de la empresa** (por el límite de 10 apps del plan gratuito),
+con permisos de solo lectura sobre tus propios mensajes. El inicio de sesión usa PKCE, así que no hay
+ningún secreto dentro del widget, y el token se renueva solo (si pasa un mes sin abrir el widget, la
+tarjeta pide volver a conectar). Detalles de la app de la empresa en `CLAUDE.md`.
+
+**Alternativa (token a mano):** si el botón no está disponible, o prefieres tu propia app, el widget
+**consulta Slack cada 60 s** con solo el _User OAuth Token_ (`xoxp-`): no usa Socket Mode ni _App-Level
+Token_. Un mensaje nuevo puede tardar hasta un minuto (más lo que tarde el índice de búsqueda de Slack)
+en aparecer. La tarjeta de Slack incluye esta guía:
 
 > **Atajo:** en [api.slack.com/apps](https://api.slack.com/apps) elige **Create New App → From a
 > manifest**, selecciona tu workspace y pega el contenido de
@@ -275,7 +295,7 @@ instala solo la próxima vez que se cierre. Un widget cerrado se actualiza al ab
 
 ## Qué falta
 
-- Decidir cómo se conecta Slack para toda la oficina (hoy cada persona necesita su propia app).
+- Probar el inicio de sesión de Slack con mensajes reales de varias personas, y comprobar que el token se renueva tras sus primeras 12 horas.
 - Un solo proyecto de Google para toda la oficina (hoy cada persona crea el suyo).
 - Probar el resumen con IA con una clave real de Gemini y datos reales durante unos días.
 - Firmar el instalador con un certificado (opcional: sin firma, Windows avisa una vez al instalar).

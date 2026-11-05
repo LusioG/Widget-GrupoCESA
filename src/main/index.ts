@@ -6,7 +6,8 @@ import { initAccounts } from './accounts'
 import { initInbox, onStateChange, setAppVersion, setSourceSignals, startTicker } from './appState'
 import { initBriefings, startBriefing, stopBriefing } from './briefing'
 import { closeDb, initDb, wasDatabaseReset } from './db/client'
-import { buildFakeSignals } from './fakeData'
+import { deliverProtocolUrl, registerProtocol, urlFromArgv } from './auth/slackSignIn'
+import { buildFakeSignals, FAKE_LISTS } from './fakeData'
 import { applyHotkey, releaseHotkey } from './hotkey'
 import { registerIpc } from './ipc'
 import { logError, logInfo, logWarn } from './logger'
@@ -14,7 +15,7 @@ import { startNotifier } from './notifier'
 import { startPresence, stopPresence } from './presence'
 import { startScheduler } from './scheduler'
 import { startConfigFile } from './configFile'
-import { getSettings, initSettings } from './settingsStore'
+import { getSettings, initSettings, updateSettings } from './settingsStore'
 import { applySettingsPatch } from './settingsApply'
 import { registerSystemEvents } from './system'
 import { createTray, refreshTrayMenu } from './tray'
@@ -23,6 +24,9 @@ import { createBadgeWindow, getBadgeWindow } from './windows/badge'
 import { createBriefingWindow } from './windows/briefing'
 import { startTabRows } from './windows/tabRows'
 import { createPanelWindow, openPanel } from './windows/panel'
+
+// How long the start takes is logged, to tell a slow start from a stuck one.
+const startedAt = Date.now()
 
 // Wait a little after launch before the first sync so startup stays quiet.
 const FIRST_SYNC_DELAY_MS = 15_000
@@ -57,12 +61,23 @@ app.on('web-contents-created', (_event, contents) => {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', () => openPanel())
+  // A second start is either the user opening the widget again, or Windows handing us the address
+  // Slack sent the browser to after "Permitir" (grupocesa-widget://…): that one is not shown.
+  app.on('second-instance', (_event, argv) => {
+    const url = urlFromArgv(argv)
+    if (url) deliverProtocolUrl(url)
+    else openPanel()
+  })
+  app.on('open-url', (event, url) => {
+    event.preventDefault() // macOS
+    deliverProtocolUrl(url)
+  })
 
   app
     .whenReady()
     .then(async () => {
       electronApp.setAppUserModelId('com.grupocesa.widget')
+      registerProtocol()
       session.defaultSession.setPermissionRequestHandler((_contents, _permission, allow) =>
         allow(false)
       )
@@ -94,6 +109,7 @@ if (!app.requestSingleInstanceLock()) {
       if (process.env['WIDGET_FAKE_DATA'] === '1') {
         // Development aid: demo signals instead of real accounts.
         const fake = buildFakeSignals(Date.now())
+        await updateSettings({ gmail: { lists: FAKE_LISTS } }) // so the demo shows an urgent list
         for (const source of ['calendar', 'clickup', 'slack', 'gmail'] as const) {
           setSourceSignals(
             source,
@@ -111,6 +127,7 @@ if (!app.requestSingleInstanceLock()) {
       startPresence()
       startTabRows()
       startConfigFile(applySettingsPatch) // after the windows exist: edits made while closed apply now
+      logInfo('app', `startup finished in ${Date.now() - startedAt} ms`)
 
       // First run: show the onboarding.
       if (!getSettings().onboardingDone) setTimeout(() => openPanel(), 1200)

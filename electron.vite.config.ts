@@ -19,7 +19,8 @@ export default defineConfig({
         input: {
           badge: resolve('src/renderer/badge.html'),
           panel: resolve('src/renderer/panel.html'),
-          briefing: resolve('src/renderer/briefing.html')
+          briefing: resolve('src/renderer/briefing.html'),
+          thread: resolve('src/renderer/thread.html')
         }
       }
     }

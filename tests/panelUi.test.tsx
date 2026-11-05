@@ -76,6 +76,7 @@ const setState = (over: Partial<AppState> = {}): void =>
       settings: DEFAULT_SETTINGS,
       accounts: accounts(),
       googleHasCredentials: false,
+      slackOAuth: false,
       aiKeySet: false,
       appVersion: '1.0.0',
       updateReady: null,

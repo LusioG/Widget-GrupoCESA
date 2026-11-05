@@ -59,7 +59,22 @@ const calendar = z.object({
   daysAhead: z.number().int().min(1).max(MAX_CALENDAR_DAYS),
   show: z.enum(['all', 'meets', 'plain'])
 })
-const gmail = z.object({ labelIds: z.array(z.string().min(1).max(128)).max(100) })
+const listAddress = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/, 'Invalid address')
+  .max(200)
+const distributionList = z.object({
+  address: listAddress,
+  name: z.string().trim().min(1).max(120),
+  urgent: z.boolean()
+})
+const gmail = z.object({
+  labelIds: z.array(z.string().min(1).max(128)).max(100),
+  lists: z.array(distributionList).max(50),
+  listDays: z.union([z.literal(1), z.literal(3), z.literal(7)])
+})
 const profile = z.object({ name: z.string().trim().max(40) })
 const briefing = z.object({ enabled: z.boolean(), time: hhmm, fullHeight: z.boolean() })
 const ai = z.object({
@@ -146,7 +161,7 @@ export const DEFAULT_SETTINGS: Settings = {
     importantChannels: []
   },
   followups: { waitHours: 48 },
-  gmail: { labelIds: ['INBOX'] },
+  gmail: { labelIds: ['INBOX'], lists: [], listDays: 7 },
   clickup: {
     listIds: [],
     dueWindowDays: 7,

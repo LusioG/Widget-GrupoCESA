@@ -34,6 +34,14 @@ export const sourceSchema = z.enum(['slack', 'gmail', 'calendar', 'clickup'])
 // A Gemini key: long enough to be real, short enough to be sane, no spaces.
 export const geminiKeySchema = z.string().trim().min(20).max(256).regex(/^\S+$/)
 
+// A conversation is opened by its Gmail id; `signalId` is the panel item it came from (marked as
+// seen), `title` what the window shows while the messages load.
+export const threadOpenSchema = z.object({
+  threadId: z.string().regex(/^[0-9a-f]{6,32}$/i),
+  signalId: z.string().min(1).max(200).optional(),
+  title: z.string().max(300).optional()
+})
+
 // The height the summary window is asked to take: a plain number of pixels.
 export const briefingHeightSchema = z.number().finite().min(100).max(5000)
 

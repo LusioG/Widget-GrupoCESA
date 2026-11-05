@@ -21,6 +21,12 @@ export type Signal = {
   priority?: TaskPriority // tasks that have one set in ClickUp
   sender?: string // messages and emails: address or name
   channel?: string // chat messages
+  // Mail from a distribution list is one item per conversation (not per message). `list` is the
+  // list's address; `threadId` opens the conversation; `unread` is how many of its messages the
+  // user has not read yet.
+  list?: { address: string; name: string }
+  threadId?: string
+  unread?: number
   isBot?: boolean
   seen?: boolean // the user already opened it
   snoozedUntil?: number // only on the "snoozed" list: when it comes back
@@ -47,6 +53,7 @@ export type AccountInfo = {
   // 'auth' | 'sync' | 'offline' | 'api_disabled' (the Google API is off in the user's project)
   error?: string
   errorUrl?: string // where to fix it (api_disabled: the page that enables the API)
+  label?: string // who it is connected as ("luciano · Grupo Cesa"), when the account says so
 }
 
 export type CalendarShow = 'all' | 'meets' | 'plain'
@@ -77,7 +84,9 @@ export type Settings = {
     importantChannels: string[] // Slack channels (as "#name") whose mentions are always urgent
   }
   followups: { waitHours: number }
-  gmail: { labelIds: string[] } // labels to watch; INBOX by default
+  // labels to watch (INBOX by default), the distribution lists that get their own section, and
+  // how many days back the unread mail of those lists is shown
+  gmail: { labelIds: string[]; lists: DistributionList[]; listDays: ListDays }
   clickup: {
     listIds: string[] // empty = every list
     dueWindowDays: number // show tasks overdue or due within this many days
@@ -175,6 +184,7 @@ export type AppState = {
   settings: Settings
   accounts: Record<Source, AccountInfo>
   googleHasCredentials: boolean
+  slackOAuth: boolean // the company's Slack app is set up: "Conectar con Slack" can be offered
   aiKeySet: boolean // a Gemini key is stored (its value never reaches the pages)
   appVersion: string
   updateReady: string | null // a newer version is downloaded and waits for a restart
@@ -202,6 +212,44 @@ export type ClickUpList = {
   team?: string // workspace name
 }
 export type GmailLabel = { id: string; name: string }
+
+// How far back the mail of the distribution lists is shown.
+export type ListDays = 1 | 3 | 7
+
+// A distribution list (a group address such as soporte@empresa.com) whose mail is followed.
+// urgent: everything that arrives through it counts as urgent, like a priority sender.
+export type DistributionList = { address: string; name: string; urgent: boolean }
+// A list found in the user's mail, offered in Ajustes to pick from.
+export type AvailableList = { address: string; name: string; count: number }
+
+// A file attached to a message (only its name and size: the file itself is never downloaded).
+export type ThreadAttachment = { name: string; size: number; mime: string }
+
+// One message of a conversation, ready to be drawn as a chat bubble.
+export type ThreadMessage = {
+  id: string
+  from: { name: string; address: string }
+  at: number
+  text: string
+  // The signature, apart from the text so it can be folded away (nothing is deleted).
+  signature?: string
+  attachments?: ThreadAttachment[]
+  mine: boolean // written by the user
+  // The message this one answers (from the In-Reply-To header), when it is in the conversation.
+  replyTo?: { name: string; snippet: string }
+  unread: boolean
+}
+
+// A whole conversation, as the thread window shows it. `error`: it could not be read.
+export type ThreadView = {
+  threadId: string
+  subject: string
+  list?: { address: string; name: string }
+  messages: ThreadMessage[]
+  gmailUrl: string
+  loading?: boolean // the window is open and the messages are still being read
+  error?: 'auth' | 'failed'
+}
 export type SlackChannel = { id: string; name: string; isPrivate: boolean }
 // A person of the Slack workspace, named the way their messages show up in the widget.
 export type SlackPerson = { id: string; name: string }

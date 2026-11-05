@@ -13,8 +13,22 @@ const AUTOMATED_SENDER =
 
 const SNIPPET_MAX = 140
 
-export function threadUrl(threadId: string): string {
-  return `https://mail.google.com/mail/u/0/#all/${threadId}`
+// `u/0` is the FIRST account signed in to the browser, which is not always the one the widget
+// reads (someone whose main Google account is a personal one). With `account` the link names the
+// mailbox, so Gmail opens that one.
+export function threadUrl(threadId: string, account?: string): string {
+  const base = account
+    ? `https://mail.google.com/mail/?authuser=${encodeURIComponent(account)}`
+    : 'https://mail.google.com/mail/u/0/'
+  return `${base}#all/${threadId}`
+}
+
+// The same link, pointing at the given account.
+export function inAccount(url: string, account: string): string {
+  const generic = 'https://mail.google.com/mail/u/0/#'
+  return account && url.startsWith(generic)
+    ? `https://mail.google.com/mail/?authuser=${encodeURIComponent(account)}#${url.slice(generic.length)}`
+    : url
 }
 
 export function parseFrom(from: string | undefined): { name: string; address: string } {

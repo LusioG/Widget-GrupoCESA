@@ -13,6 +13,7 @@ import type {
 import { GEMINI_KEY } from './ai/key'
 import { getAutostart } from './autostart'
 import { hasSecret } from './auth/secrets'
+import { slackClientId } from './auth/slackOAuth'
 import { hasGoogleCredentials } from './connectors/google/auth'
 import { loadInbox, saveInbox, type InboxRow } from './db/repos'
 import { shouldKeep } from './engine/filters'
@@ -29,6 +30,8 @@ const accounts: Record<Source, AccountInfo> = {
   slack: { status: 'disconnected' },
   gmail: { status: 'disconnected' }
 }
+// Who each account is connected as. Kept apart from `accounts`: that one is rewritten by every sync.
+const labels: Partial<Record<Source, string>> = {}
 let paused = false
 let manualFocus = false
 // When the panel was last opened or closed: mail and Slack messages newer than this are "new".
@@ -79,7 +82,8 @@ export function getState(): AppState {
   const ranking = {
     now,
     importantSenders: settings.filters.importantSenders,
-    importantChannels: settings.filters.importantChannels
+    importantChannels: settings.filters.importantChannels,
+    importantLists: settings.gmail.lists.filter((l) => l.urgent).map((l) => l.address)
   }
   const signals = visible
     .map((s): Signal =>
@@ -116,13 +120,29 @@ export function getState(): AppState {
     focus: { manual: manualFocus, active: focusActive },
     outsideHours: !isWorkTime(new Date(now), settings.schedule),
     settings,
-    accounts: { ...accounts },
+    accounts: withLabels(),
     googleHasCredentials: hasGoogleCredentials(),
+    slackOAuth: slackClientId() !== '',
     aiKeySet: hasSecret(GEMINI_KEY),
     appVersion,
     updateReady,
     autostart: getAutostart()
   }
+}
+
+function withLabels(): Record<Source, AccountInfo> {
+  const out = { ...accounts }
+  for (const source of Object.keys(labels) as Source[]) {
+    const label = labels[source]
+    if (label) out[source] = { ...out[source], label }
+  }
+  return out
+}
+
+export function setAccountLabel(source: Source, label: string | undefined): void {
+  if (label) labels[source] = label
+  else delete labels[source]
+  publish()
 }
 
 export function publish(): void {

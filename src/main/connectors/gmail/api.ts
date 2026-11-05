@@ -1,10 +1,35 @@
 import type { Auth as GoogleAuth, gmail_v1 } from 'googleapis'
-import type { GmailApi, GmailMessage } from './types'
+import { extractText, listAttachments } from './body'
+import type { GmailApi, GmailListsApi, GmailMessage } from './types'
 
-// Headers are all we ever ask for: no bodies and no attachments are downloaded.
-const HEADERS = ['From', 'Subject', 'Date', 'List-Unsubscribe', 'Precedence', 'Auto-Submitted']
+// Ordinary mail: headers only, no bodies and no attachments. The list headers tell which
+// distribution list a message came through.
+const HEADERS = [
+  'From',
+  'To',
+  'Cc',
+  'Subject',
+  'Date',
+  'List-Unsubscribe',
+  'List-Id',
+  'List-Post',
+  'Precedence',
+  'Auto-Submitted'
+]
+// The conversation of a distribution list: who wrote, to whom, and which message it answers.
+const THREAD_HEADERS = [
+  'From',
+  'To',
+  'Cc',
+  'Subject',
+  'Date',
+  'List-Id',
+  'List-Post',
+  'Message-ID',
+  'In-Reply-To'
+]
 
-function toMessage(m: gmail_v1.Schema$Message): GmailMessage | null {
+function toMessage(m: gmail_v1.Schema$Message, withBody = false): GmailMessage | null {
   if (!m.id || !m.threadId) return null
   const headers: Record<string, string> = {}
   for (const h of m.payload?.headers ?? []) {
@@ -16,7 +41,11 @@ function toMessage(m: gmail_v1.Schema$Message): GmailMessage | null {
     labelIds: m.labelIds ?? [],
     snippet: m.snippet ?? '',
     internalDate: Number(m.internalDate ?? 0),
-    headers
+    headers,
+    ...(withBody && {
+      body: extractText(m.payload ?? undefined),
+      attachments: listAttachments(m.payload ?? undefined)
+    })
   }
 }
 
@@ -29,7 +58,7 @@ const notFound = (error: unknown): boolean => {
 export async function createGoogleGmailApi(
   auth: GoogleAuth.OAuth2Client,
   options: { rootUrl?: string } = {} // only tests point this at a local mock
-): Promise<GmailApi> {
+): Promise<GmailApi & GmailListsApi> {
   const { google } = await import('googleapis')
   const gmail = google.gmail({ version: 'v1', auth, ...options })
 
@@ -103,7 +132,38 @@ export async function createGoogleGmailApi(
         format: 'metadata',
         metadataHeaders: ['From']
       })
-      return (data.messages ?? []).map(toMessage).filter((m): m is GmailMessage => m !== null)
+      return (data.messages ?? [])
+        .map((m) => toMessage(m))
+        .filter((m): m is GmailMessage => m !== null)
+    },
+
+    async searchThreads(q, max) {
+      const { data } = await gmail.users.threads.list({ userId: 'me', q, maxResults: max })
+      return (data.threads ?? [])
+        .filter((t) => t.id)
+        .map((t) => ({ id: t.id as string, historyId: String(t.historyId ?? '') }))
+    },
+
+    async searchMessageIds(q, max) {
+      const { data } = await gmail.users.messages.list({ userId: 'me', q, maxResults: max })
+      return (data.messages ?? []).map((m) => m.id).filter((id): id is string => !!id)
+    },
+
+    async getThread(threadId, withBody) {
+      try {
+        const { data } = await gmail.users.threads.get({
+          userId: 'me',
+          id: threadId,
+          ...(withBody ? { format: 'full' } : { format: 'metadata', metadataHeaders: THREAD_HEADERS })
+        })
+        return (data.messages ?? [])
+          .map((m) => toMessage(m, withBody))
+          .filter((m): m is GmailMessage => m !== null)
+          .sort((a, b) => a.internalDate - b.internalDate)
+      } catch (error) {
+        if (notFound(error)) return null
+        throw error
+      }
     },
 
     async listLabels() {

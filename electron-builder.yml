@@ -30,6 +30,14 @@ files:
 asarUnpack:
   - resources/**
 
+# The address Slack sends the browser to after "Permitir" (grupocesa-widget://slack). The installer
+# tells Windows that this program opens it, so the person lands back in the widget. The scheme must
+# be the same as WIDGET_PROTOCOL in src/shared/slackApp.ts and the redirect URL of the Slack app.
+protocols:
+  - name: Widget GrupoCESA
+    schemes:
+      - grupocesa-widget
+
 win:
   executableName: widget
   icon: build/icon.ico

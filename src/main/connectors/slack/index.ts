@@ -1,6 +1,9 @@
 import type { WebClient } from '@slack/web-api'
 import type { Signal, SlackChannel, SlackPerson } from '../../../shared/types'
 import { deleteSecret, getSecret, hasSecret, setSecret } from '../../auth/secrets'
+import { needsRefresh, refreshTokens, slackClientId, type SlackTokens } from '../../auth/slackOAuth'
+import { signInWithSlack } from '../../auth/slackSignIn'
+import { identityLabel } from '../../../shared/accountLabel'
 import { getSettings } from '../../settingsStore'
 import { AuthError, type Connector, type ConnectorContext } from '../types'
 import {
@@ -13,7 +16,10 @@ import { emptyDmState, parseDmState, pruneDmState, slackFollowups, type DmState 
 
 const KEYS = {
   userToken: 'slack.userToken',
-  identity: 'slack.identity'
+  identity: 'slack.identity',
+  // Only when the token was given by the sign-in with Slack and it expires: how to renew it.
+  refreshToken: 'slack.refreshToken',
+  expiresAt: 'slack.tokenExpiresAt'
 } as const
 
 const DAY = 24 * 60 * 60 * 1000
@@ -32,7 +38,7 @@ function isSlackAuthError(error: unknown): boolean {
 // Tests point the SDK client at a local mock through this variable.
 const apiUrl = (): string | undefined => process.env['SLACK_API_URL']
 
-type Identity = { userId: string; workspaceUrl: string }
+type Identity = { userId: string; workspaceUrl: string; user?: string; team?: string }
 
 type SearchMatch = {
   type?: string
@@ -74,9 +80,45 @@ export class SlackConnector implements Connector {
     return hasSecret(KEYS.userToken)
   }
 
-  // The token is stored first, then validated by `connect()`.
+  // The token is stored first, then validated by `connect()`. A token pasted by hand does not
+  // expire, so nothing is kept to renew it.
   setToken(userToken: string): void {
+    deleteSecret(KEYS.refreshToken)
+    deleteSecret(KEYS.expiresAt)
     setSecret(KEYS.userToken, userToken.trim())
+  }
+
+  private storeTokens(tokens: SlackTokens): void {
+    setSecret(KEYS.userToken, tokens.accessToken)
+    if (tokens.refreshToken && tokens.expiresAt) {
+      setSecret(KEYS.refreshToken, tokens.refreshToken)
+      setSecret(KEYS.expiresAt, String(tokens.expiresAt))
+    } else {
+      deleteSecret(KEYS.refreshToken)
+      deleteSecret(KEYS.expiresAt)
+    }
+  }
+
+  // The person says "Permitir" in the browser, with their own Slack account: no app to create and
+  // no token to copy. The token is then checked like any other.
+  async connectWithOAuth(): Promise<void> {
+    this.storeTokens(await signInWithSlack())
+    await this.connect()
+  }
+
+  // A token that expires is renewed a few minutes before. If Slack refuses (the refresh token is
+  // too old: the widget was not opened for weeks), the person has to connect again.
+  // True when the token changed, so the client must be made again.
+  private async ensureFresh(): Promise<boolean> {
+    const refreshToken = getSecret(KEYS.refreshToken) ?? undefined
+    const expiresAt = Number(getSecret(KEYS.expiresAt) ?? 0) || undefined
+    if (!needsRefresh({ refreshToken, expiresAt }, Date.now())) return false
+    try {
+      this.storeTokens(await refreshTokens({ clientId: slackClientId(), refreshToken: refreshToken! }))
+    } catch {
+      throw new AuthError('Slack refused to renew the token')
+    }
+    return true
   }
 
   private async newWebClient(): Promise<WebClient> {
@@ -91,7 +133,15 @@ export class SlackConnector implements Connector {
       const web = await this.newWebClient()
       const auth = await web.auth.test() // read-only; also tells us who "me" is
       if (!auth.user_id || !auth.url) throw new Error('Unexpected auth.test response')
-      setSecret(KEYS.identity, JSON.stringify({ userId: auth.user_id, workspaceUrl: auth.url }))
+      setSecret(
+        KEYS.identity,
+        JSON.stringify({
+          userId: auth.user_id,
+          workspaceUrl: auth.url,
+          user: auth.user,
+          team: auth.team
+        } satisfies Identity)
+      )
       this.reset()
     } catch (error) {
       this.clearSecrets()
@@ -99,9 +149,28 @@ export class SlackConnector implements Connector {
     }
   }
 
+  // Who this account is ("luciano · Grupo Cesa"), as Slack told when it was connected.
+  identityLabel(): string | undefined {
+    try {
+      return identityLabel(JSON.parse(getSecret(KEYS.identity) ?? 'null') as Identity | null)
+    } catch {
+      return undefined
+    }
+  }
+
+  // A connection made before the name was kept has only the id: ask Slack once and keep the name.
+  async refreshIdentity(): Promise<void> {
+    const stored = JSON.parse(getSecret(KEYS.identity) ?? 'null') as Identity | null
+    if (!stored || stored.user) return
+    const auth = await (await this.newWebClient()).auth.test()
+    setSecret(KEYS.identity, JSON.stringify({ ...stored, user: auth.user, team: auth.team }))
+  }
+
   private clearSecrets(): void {
     deleteSecret(KEYS.userToken)
     deleteSecret(KEYS.identity)
+    deleteSecret(KEYS.refreshToken)
+    deleteSecret(KEYS.expiresAt)
   }
 
   private reset(): void {
@@ -152,7 +221,9 @@ export class SlackConnector implements Connector {
   }
 
   async sync(ctx: ConnectorContext): Promise<Signal[]> {
+    const renewed = await this.ensureFresh()
     if (!this.loaded) await this.load(ctx)
+    else if (renewed) this.web = await this.newWebClient()
     const web = this.web!
     const me = this.identity!.userId
     const after = isoDay(this.since - DAY) // search filters by whole days; `since` does the rest

@@ -117,43 +117,65 @@ function ClickUpCard(): React.JSX.Element {
 
 function SlackCard(): React.JSX.Element {
   const account = useAppStore((st) => st.state?.accounts.slack)
+  const oauth = useAppStore((st) => st.state?.slackOAuth ?? false)
   const [userToken, setUserToken] = useState('')
   const { busy, error, run } = useAction()
   const status = account?.status ?? 'disconnected'
 
+  // The token by hand: how it was always done, and the way out while the company's app is not set up.
+  const manual = (
+    <>
+      <details className="text-xs text-cesa-mute">
+        <summary className="cursor-pointer text-cesa-ink">{s.slackGuideTitle}</summary>
+        <ol className="mt-2 list-decimal space-y-1.5 pl-4 select-text">
+          {s.slackSteps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      </details>
+      <TextField
+        type="password"
+        value={userToken}
+        onChange={(e) => setUserToken(e.target.value)}
+        placeholder={s.slackUserToken}
+      />
+      <Button
+        disabled={busy || !userToken.trim()}
+        onClick={async () => {
+          if (await run(() => window.api.accounts.connectSlack(userToken))) {
+            setUserToken('')
+          }
+        }}
+      >
+        {busy ? s.connecting : status === 'needs_reconnect' ? s.reconnect : s.connect}
+      </Button>
+    </>
+  )
+
   return (
     <Frame source="slack" status={status}>
       {status === 'connected' ? (
-        <Button variant="ghost" onClick={() => window.api.accounts.disconnect('slack')}>
-          {s.disconnect}
-        </Button>
-      ) : (
         <>
-          <details className="text-xs text-cesa-mute">
-            <summary className="cursor-pointer text-cesa-ink">{s.slackGuideTitle}</summary>
-            <ol className="mt-2 list-decimal space-y-1.5 pl-4 select-text">
-              {s.slackSteps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-          </details>
-          <TextField
-            type="password"
-            value={userToken}
-            onChange={(e) => setUserToken(e.target.value)}
-            placeholder={s.slackUserToken}
-          />
-          <Button
-            disabled={busy || !userToken.trim()}
-            onClick={async () => {
-              if (await run(() => window.api.accounts.connectSlack(userToken))) {
-                setUserToken('')
-              }
-            }}
-          >
-            {busy ? s.connecting : status === 'needs_reconnect' ? s.reconnect : s.connect}
+          {account?.label && (
+            <p className="text-xs text-cesa-ink select-text">{s.connectedAs(account.label)}</p>
+          )}
+          <Button variant="ghost" onClick={() => window.api.accounts.disconnect('slack')}>
+            {s.disconnect}
           </Button>
         </>
+      ) : oauth ? (
+        <>
+          <p className="text-xs text-cesa-mute">{s.slackOAuthHelp}</p>
+          <Button disabled={busy} onClick={() => run(() => window.api.accounts.connectSlackOAuth())}>
+            {busy ? s.slackOAuthWaiting : status === 'needs_reconnect' ? s.reconnect : s.slackOAuthConnect}
+          </Button>
+          <details className="text-xs text-cesa-mute">
+            <summary className="cursor-pointer text-cesa-ink">{s.slackManualTitle}</summary>
+            <div className="mt-2 space-y-2">{manual}</div>
+          </details>
+        </>
+      ) : (
+        manual
       )}
       <Footer error={error} />
     </Frame>
@@ -174,9 +196,22 @@ function GoogleCard({ feature }: { feature: GoogleFeature }): React.JSX.Element 
   return (
     <Frame source={feature} status={status}>
       {status === 'connected' ? (
-        <Button variant="ghost" onClick={() => window.api.accounts.disconnect(feature)}>
-          {s.disconnect}
-        </Button>
+        <>
+          {feature === 'gmail' && <p className="text-xs text-cesa-mute">{s.gmailReconnectNote}</p>}
+          <div className="flex items-center gap-2">
+            {feature === 'gmail' && (
+              <Button
+                disabled={busy}
+                onClick={() => run(() => window.api.accounts.connectGoogle(feature))}
+              >
+                {busy ? s.connecting : s.reconnect}
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => window.api.accounts.disconnect(feature)}>
+              {s.disconnect}
+            </Button>
+          </div>
+        </>
       ) : showForm ? (
         <>
           <p className="text-xs text-cesa-mute">{s.googleHelp}</p>

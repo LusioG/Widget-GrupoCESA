@@ -2,6 +2,7 @@ import type { SettingsPatch } from './settingsSchema'
 import type {
   ActionResult,
   AppState,
+  AvailableList,
   Briefing,
   BriefingSummary,
   ClickUpList,
@@ -12,6 +13,7 @@ import type {
   SlackChannel,
   SlackPerson,
   Source,
+  ThreadView,
   UpdateCheckResult
 } from './types'
 
@@ -33,9 +35,13 @@ export interface Api {
     saveGoogleCredentials(clientId: string, clientSecret: string): Promise<ActionResult>
     connectGoogle(feature: GoogleFeature): Promise<ActionResult>
     connectSlack(userToken: string): Promise<ActionResult>
+    // Opens Slack in the browser; the person authorizes with their own account (no token to paste).
+    connectSlackOAuth(): Promise<ActionResult>
     disconnect(source: Source): Promise<void>
     listClickUpLists(): Promise<ClickUpList[]>
     listGmailLabels(): Promise<GmailLabel[]>
+    // The distribution lists found in the user's recent mail, to pick from.
+    listGmailLists(): Promise<AvailableList[]>
     listSlackChannels(): Promise<SlackChannel[]>
     listSlackPeople(): Promise<SlackPerson[]>
   }
@@ -79,6 +85,14 @@ export interface Api {
     fit(height: number): void
     // The main process sends the summary to show, each time the window is opened.
     onShow(cb: (briefing: Briefing) => void): () => void
+  }
+  // The conversation of a distribution list: its own small window, drawn as a chat.
+  threads: {
+    // `signalId` is the panel item it came from (it counts as seen); `title` is shown while loading.
+    open(request: { threadId: string; signalId?: string; title?: string }): Promise<void>
+    close(): void
+    current(): Promise<ThreadView | null>
+    onShow(cb: (view: ThreadView) => void): () => void
   }
   // The widget updates itself from GitHub Releases; the pages can ask now, or apply what is ready.
   update: {

@@ -113,7 +113,9 @@ export function Home(): React.JSX.Element {
     if (last && last.offset === offset) last.items.push(entry)
     else meetingDays.push({ offset, items: [entry] })
   }
-  const items = all.filter((s) => s.kind !== 'meeting' && s.kind !== 'followup')
+  // Conversations of the followed distribution lists have their own section, above the events.
+  const lists = all.filter((s) => s.kind !== 'meeting' && s.list)
+  const items = all.filter((s) => s.kind !== 'meeting' && s.kind !== 'followup' && !s.list)
   const followups = all.filter((s) => s.kind === 'followup')
   const anyConnected = Object.values(state?.accounts ?? {}).some((a) => a.status !== 'disconnected')
   const needsReconnect = Object.values(state?.accounts ?? {}).some(
@@ -159,8 +161,9 @@ export function Home(): React.JSX.Element {
     </div>
   )
 
-  const urgentCount = items.filter((i) => (i.urgency ?? 0) >= URGENT_THRESHOLD).length
-  const summary = strings.panel.summary(items.length, urgentCount)
+  const pending = [...items, ...lists]
+  const urgentCount = pending.filter((i) => (i.urgency ?? 0) >= URGENT_THRESHOLD).length
+  const summary = strings.panel.summary(pending.length, urgentCount)
   const subtitle = state?.paused
     ? strings.panel.pausedNotice
     : !anyConnected
@@ -168,8 +171,8 @@ export function Home(): React.JSX.Element {
       : state?.focus.active
         ? `${strings.panel.focusNotice} · ${summary}`
         : summary
-  const hasSelectable = items.length > 0 || followups.length > 0
-  // "Seleccionar" sits on the same line as the first list title ("Pendientes y novedades").
+  // "Seleccionar" sits on the same line as "Pendientes y novedades". Only when that section is
+  // missing does it move to the next one that is there (the follow-ups, then the lists).
   const selectButton = (
     <button
       type="button"
@@ -267,6 +270,17 @@ export function Home(): React.JSX.Element {
               </button>
             </div>
           )}
+          {lists.length > 0 && (
+            <section>
+              <SectionTitle
+                action={items.length === 0 && followups.length === 0 ? selectButton : undefined}
+              >
+                {strings.panel.lists}
+              </SectionTitle>
+              {renderItems(lists)}
+            </section>
+          )}
+          {lists.length > 0 && (meetings.length > 0 || items.length > 0) && <DotsDivider />}
           {meetings.length > 0 && (
             <section>
               <SectionTitle>{strings.panel.meetings}</SectionTitle>
@@ -293,7 +307,7 @@ export function Home(): React.JSX.Element {
           {meetings.length > 0 && items.length > 0 && <DotsDivider />}
           {items.length > 0 && (
             <section>
-              <SectionTitle action={hasSelectable ? selectButton : undefined}>
+              <SectionTitle action={selectButton}>
                 {strings.panel.pending}
               </SectionTitle>
               {renderItems(items)}
@@ -307,7 +321,10 @@ export function Home(): React.JSX.Element {
               {renderItems(followups)}
             </section>
           )}
-          {items.length === 0 && followups.length === 0 && meetings.length === 0 && (
+          {items.length === 0 &&
+            followups.length === 0 &&
+            meetings.length === 0 &&
+            lists.length === 0 && (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               {anyConnected ? (
                 <CircleCheckIcon className="size-9 text-cesa-green" />

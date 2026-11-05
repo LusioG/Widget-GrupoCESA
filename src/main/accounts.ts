@@ -1,16 +1,26 @@
 import type {
   ActionResult,
+  AvailableList,
   ClickUpList,
   GmailLabel,
   GoogleFeature,
   SlackChannel,
   SlackPerson,
-  Source
+  Source,
+  ThreadView
 } from '../shared/types'
-import { clearSourceSignals, getAccount, publish, setAccount, setSourceSignals } from './appState'
+import {
+  clearSourceSignals,
+  getAccount,
+  publish,
+  setAccount,
+  setAccountLabel,
+  setSourceSignals
+} from './appState'
 import { CalendarConnector } from './connectors/calendar'
 import { ClickUpConnector } from './connectors/clickup'
 import { GmailConnector } from './connectors/gmail'
+import { threadUrl } from './connectors/gmail/mapper'
 import { hasGoogleCredentials, saveGoogleCredentials } from './connectors/google/auth'
 import { SlackConnector } from './connectors/slack'
 import {
@@ -52,7 +62,19 @@ export async function initAccounts(): Promise<void> {
     setAccount(source, { status, lastSyncAt: state?.lastSyncAt ?? undefined })
     setSourceSignals(source, await loadCachedSignals(source)) // last known data while syncing
     if (status === 'needs_reconnect') haltSource(source)
+    if (source === 'slack') void labelSlack(status === 'connected')
   }
+}
+
+// Shows who Slack is connected as. Best effort: without the network it just shows nothing.
+async function labelSlack(connected: boolean): Promise<void> {
+  if (!connected) return
+  try {
+    await slack.refreshIdentity()
+  } catch {
+    // The name stays as it was; the next start tries again.
+  }
+  setAccountLabel('slack', slack.identityLabel())
 }
 
 // ---- connecting / disconnecting ----
@@ -63,6 +85,9 @@ function describe(error: unknown, fallback: string): string {
   if (message === 'Authorization timed out')
     return 'Se agotó el tiempo de espera de la autorización.'
   if (message === 'Authorization denied') return 'La autorización fue cancelada.'
+  if (message === 'Slack sign-in is not set up') {
+    return 'Falta configurar la app de Slack de la empresa. Pega un token mientras tanto.'
+  }
   if (message === 'Permission was not granted') {
     return 'Google no concedió el permiso. Vuelve a intentarlo y acepta todos los permisos.'
   }
@@ -72,6 +97,7 @@ function describe(error: unknown, fallback: string): string {
 async function markConnected(source: Source): Promise<void> {
   await saveSyncState(source, { status: 'connected', error: null })
   setAccount(source, { status: 'connected' })
+  if (source === 'slack') void labelSlack(true)
   syncNow(source)
 }
 
@@ -94,6 +120,17 @@ export async function connectSlack(userToken: string): Promise<ActionResult> {
   try {
     slack.setToken(userToken)
     await slack.connect() // validates the user token
+    await markConnected('slack')
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: describe(error, 'No se pudo conectar con Slack.') }
+  }
+}
+
+// The person says "Permitir" in the browser with their own Slack account: no token to paste.
+export async function connectSlackOAuth(): Promise<ActionResult> {
+  try {
+    await slack.connectWithOAuth()
     await markConnected('slack')
     return { ok: true }
   } catch (error) {
@@ -135,6 +172,7 @@ export async function disconnectAccount(source: Source): Promise<void> {
   await connectors[source].disconnect()
   await clearSource(source)
   clearSourceSignals(source)
+  setAccountLabel(source, undefined)
   setAccount(source, { status: 'disconnected' })
 }
 
@@ -164,6 +202,34 @@ export const listClickUpLists = (): Promise<ClickUpList[]> =>
 
 export const listGmailLabels = (): Promise<GmailLabel[]> =>
   guarded('gmail', () => gmail.listWatchableLabels(), [])
+
+// The Gmail address the widget reads (empty until the first check), for links that must open it.
+export const gmailAccount = (): string => gmail.account
+
+export const listGmailLists = (): Promise<AvailableList[]> =>
+  guarded('gmail', () => gmail.listAvailableLists(), [])
+
+// A conversation of a distribution list, read now. Failing never throws: the window shows why.
+export async function readGmailThread(threadId: string): Promise<ThreadView> {
+  const failed = (error: 'auth' | 'failed'): ThreadView => ({
+    threadId,
+    subject: '',
+    messages: [],
+    gmailUrl: threadUrl(threadId, gmail.account),
+    error
+  })
+  try {
+    return await gmail.readThread(threadId)
+  } catch (error) {
+    if (error instanceof AuthError) {
+      // Usually the permission that reads messages was never granted: reconnecting asks for it.
+      await saveSyncState('gmail', { status: 'needs_reconnect', error: 'auth' })
+      setAccount('gmail', { status: 'needs_reconnect', error: 'auth' })
+      return failed('auth')
+    }
+    return failed('failed')
+  }
+}
 
 export const listSlackChannels = (): Promise<SlackChannel[]> =>
   guarded('slack', () => slack.listChannels(), [])

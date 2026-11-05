@@ -19,6 +19,7 @@ export type RankingContext = {
   now: number
   importantSenders: string[]
   importantChannels?: string[] // Slack channels marked urgent
+  importantLists?: string[] // addresses of the distribution lists marked urgent
 }
 
 const BASE: Record<Signal['kind'], number> = {
@@ -83,7 +84,9 @@ export function scoreSignal(signal: Signal, ctx: RankingContext): number {
   // An overdue task is always urgent, even with a low priority.
   if (signal.dueAt !== undefined && signal.dueAt < ctx.now)
     score = Math.max(score, URGENT_THRESHOLD)
-  if (fromPriority || inChannels(signal.channel, ctx.importantChannels)) {
+  const fromUrgentList =
+    !!signal.list && !!ctx.importantLists?.includes(signal.list.address.toLowerCase())
+  if (fromPriority || fromUrgentList || inChannels(signal.channel, ctx.importantChannels)) {
     score = Math.max(score, PRIORITY_SENDER_SCORE)
   }
 

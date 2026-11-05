@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Api } from '../shared/api'
 import { IPC } from '../shared/ipcChannels'
-import type { AppState, Briefing, PanelView } from '../shared/types'
+import type { AppState, Briefing, PanelView, ThreadView } from '../shared/types'
 
 // Fixed, minimal surface: the renderer never gets raw ipcRenderer.
 const api: Api = {
@@ -36,9 +36,11 @@ const api: Api = {
       ipcRenderer.invoke(IPC.googleSaveCredentials, { clientId, clientSecret }),
     connectGoogle: (feature) => ipcRenderer.invoke(IPC.googleConnect, feature),
     connectSlack: (userToken) => ipcRenderer.invoke(IPC.slackConnect, userToken),
+    connectSlackOAuth: () => ipcRenderer.invoke(IPC.slackConnectOAuth),
     disconnect: (source) => ipcRenderer.invoke(IPC.accountDisconnect, source),
     listClickUpLists: () => ipcRenderer.invoke(IPC.clickupLists),
     listGmailLabels: () => ipcRenderer.invoke(IPC.gmailLabels),
+    listGmailLists: () => ipcRenderer.invoke(IPC.gmailLists),
     listSlackChannels: () => ipcRenderer.invoke(IPC.slackChannels),
     listSlackPeople: () => ipcRenderer.invoke(IPC.slackPeople)
   },
@@ -76,6 +78,16 @@ const api: Api = {
       const listener = (_: unknown, briefing: Briefing): void => cb(briefing)
       ipcRenderer.on(IPC.briefingShown, listener)
       return () => ipcRenderer.removeListener(IPC.briefingShown, listener)
+    }
+  },
+  threads: {
+    open: (request) => ipcRenderer.invoke(IPC.threadOpen, request),
+    close: () => ipcRenderer.send(IPC.threadClose),
+    current: () => ipcRenderer.invoke(IPC.threadCurrent),
+    onShow: (cb) => {
+      const listener = (_: unknown, view: ThreadView): void => cb(view)
+      ipcRenderer.on(IPC.threadShown, listener)
+      return () => ipcRenderer.removeListener(IPC.threadShown, listener)
     }
   },
   update: {

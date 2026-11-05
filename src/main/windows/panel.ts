@@ -31,6 +31,14 @@ export function getPanelWindow(): BrowserWindow | null {
   return panelWindow
 }
 
+// How long the panel waits, after losing the focus, to see where the focus went.
+const BLUR_SETTLE_MS = 80
+// Other windows that count as "still using the panel" while they have the focus.
+const keepOpenFor: (() => boolean)[] = []
+export function keepPanelOpenWhile(isActive: () => boolean): void {
+  keepOpenFor.push(isActive)
+}
+
 function notifyOpen(open: boolean): void {
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) win.webContents.send(IPC.panelOpenChanged, open)
@@ -58,10 +66,16 @@ export function createPanelWindow(): BrowserWindow {
   win.webContents.on('did-finish-load', () => styleWindow(win, 'panel'))
 
   win.on('blur', () => {
-    if (win.isVisible() && !closing) {
+    if (!win.isVisible() || closing) return
+    // Windows that open from the panel (the conversation of a list) take the focus when they
+    // appear: going to one of them must not close the panel. The focus moves a moment after the
+    // blur, so look once it has settled.
+    setTimeout(() => {
+      if (!win.isVisible() || closing || win.isFocused()) return
+      if (keepOpenFor.some((isActive) => isActive())) return
       lastBlurHideAt = Date.now()
       closePanel()
-    }
+    }, BLUR_SETTLE_MS)
   })
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type === 'keyDown' && input.key === 'Escape') {
@@ -94,6 +108,13 @@ function drawer(): ReturnType<typeof drawerLayout> {
   return drawerLayout(getSettings().widget.side, closedTabRect(), fittedPanel(area), area)
 }
 
+// Windows placed beside the panel (the conversation of a list) follow it when it moves or changes
+// size, so a bigger panel never covers them.
+const placedListeners: (() => void)[] = []
+export function onPanelPlaced(listener: () => void): void {
+  placedListeners.push(listener)
+}
+
 // Places the open panel without animation (also used when a setting changes while it is open).
 export function repositionPanel(): void {
   const win = panelWindow
@@ -104,11 +125,12 @@ export function repositionPanel(): void {
     stopSlide()
     win.setBounds(layout.panel)
     badge.setBounds(layout.tab)
-    return
+  } else {
+    const badgeBounds = badge.getBounds()
+    const area = screen.getDisplayMatching(badgeBounds).workArea
+    win.setBounds(placePanel(badgeBounds, fittedPanel(area), area))
   }
-  const badgeBounds = badge.getBounds()
-  const area = screen.getDisplayMatching(badgeBounds).workArea
-  win.setBounds(placePanel(badgeBounds, fittedPanel(area), area))
+  placedListeners.forEach((listener) => listener())
 }
 
 // `view` forces a page (e.g. Ajustes from the tray). Without it the panel resumes where it was

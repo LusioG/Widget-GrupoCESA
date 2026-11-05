@@ -23,7 +23,10 @@ export const strings = {
   },
   panel: {
     greeting: 'Tus pendientes',
-    meetings: 'Próximas reuniones',
+    meetings: 'Próximos eventos',
+    lists: 'Listas de distribución',
+    listUnread: (n: number): string => (n === 1 ? '1 sin leer' : `${n} sin leer`),
+    listOpen: 'Ver la conversación',
     meetingDay: (offset: number, label: string): string =>
       offset === 0 ? 'Hoy' : offset === 1 ? 'Mañana' : label,
     meetingUntil: (time: string): string => `hasta ${time}`,
@@ -94,6 +97,30 @@ export const strings = {
     priority: { urgent: 'Urgente', high: 'Alta', normal: 'Normal', low: 'Baja' },
     dueToday: 'vence pronto',
     overdue: 'vencida'
+  },
+  // The window that shows a conversation of a distribution list as a chat.
+  thread: {
+    close: 'Cerrar',
+    loading: 'Abriendo la conversación…',
+    you: 'Tú',
+    inReplyTo: (name: string): string => `En respuesta a ${name}`,
+    newMessage: 'Nuevo',
+    messages: (n: number): string => (n === 1 ? '1 mensaje' : `${n} mensajes`),
+    openInGmail: 'Abrir en Gmail',
+    empty: 'Esta conversación ya no está disponible.',
+    today: 'Hoy',
+    yesterday: 'Ayer',
+    showMore: 'Ver más',
+    showLess: 'Ver menos',
+    showSignature: 'Mostrar la firma',
+    hideSignature: 'Ocultar la firma',
+    openLink: (label: string): string => `Abrir el enlace a ${label}`,
+    image: (name: string): string => (name ? `Imagen: ${name}` : 'Imagen'),
+    attachment: (name: string): string => `Adjunto: ${name}. Se abre en Gmail`,
+    errors: {
+      auth: 'Para leer los mensajes hace falta volver a conectar Gmail y aceptar el permiso de lectura.',
+      failed: 'No se pudo abrir la conversación. Inténtalo de nuevo en un momento.'
+    }
   },
   sources: {
     slack: 'Slack',
@@ -172,8 +199,16 @@ export const strings = {
         'Install to Workspace y copia el "User OAuth Token" (empieza con xoxp-). No hace falta Socket Mode ni App-Level Token.'
       ],
       slackUserToken: 'User OAuth Token (xoxp-…)',
+      slackOAuthHelp:
+        'Se abre Slack en el navegador: elige el workspace de la empresa y toca "Permitir". Solo lee tus mensajes directos y menciones; nunca escribe ni envía nada.',
+      slackOAuthConnect: 'Conectar con Slack',
+      slackOAuthWaiting: 'Esperando que permitas el acceso en el navegador…',
+      slackManualTitle: 'Prefiero pegar un token a mano',
+      connectedAs: (who: string): string => `Conectado como ${who}`,
       gmailHelp:
-        'Usa el mismo cliente de Google de Calendar. Solo lee cabeceras y etiquetas (nunca el contenido ni los adjuntos). Al activarlo, Google vuelve a pedir permiso.',
+        'Usa el mismo cliente de Google de Calendar. Es solo lectura: la app nunca envía, borra ni modifica correos. El texto de un mensaje solo se lee cuando abres una conversación de una lista de distribución, y no se guarda ni se envía a la IA. Al activarlo, Google vuelve a pedir permiso.',
+      gmailReconnectNote:
+        'Si conectaste Gmail antes de que existieran las listas de distribución, vuelve a conectarlo para dar el permiso de lectura.',
       gmailTestMode:
         'Para uso personal la app de Google se usa en modo de prueba: la verificación de Google solo hace falta para distribuirla públicamente.',
       gmailConnect: 'Conectar Gmail',
@@ -184,6 +219,26 @@ export const strings = {
       gmailHint:
         'Solo se muestran correos sin leer de las etiquetas marcadas (Recibidos por defecto). Promociones, redes y newsletters siempre se ignoran.',
       needGmail: 'Conecta Gmail en Cuentas para elegir etiquetas.',
+      listsTitle: 'Listas de distribución',
+      listsHint:
+        'Una lista de distribución es una dirección de grupo a la que escriben varias personas. Las que sigas aparecen arriba en el panel, una por conversación, con un aviso de mensajes sin leer, y no se mezclan con tus correos. Marca "urgente" para que todo lo que llegue por esa lista lo sea; además valen tus remitentes prioritarios y a ignorar.',
+      needLists: 'Conecta Gmail en Cuentas para elegir listas.',
+      listsSearch: 'Buscar mis listas',
+      listsSearching: 'Buscando en tus correos recientes…',
+      listsNone:
+        'No se encontró ninguna lista en tus correos de los últimos 90 días. Puedes añadir una escribiendo su dirección.',
+      listsFound: (n: number): string =>
+        n === 1 ? '1 lista encontrada en tus correos' : `${n} listas encontradas en tus correos`,
+      listsMessages: (n: number): string => (n === 1 ? '1 correo' : `${n} correos`),
+      listsDaysLabel: 'Mensajes de las listas de los últimos',
+      listsDays: { 1: '1 día', 3: '3 días', 7: '7 días' },
+      listsFollowing: 'Listas que sigues',
+      listsAddLabel: 'Añadir por dirección',
+      listsAddPlaceholder: 'soporte@tuempresa.com',
+      listsAdd: 'Añadir',
+      listsFollow: 'Seguir',
+      listsInvalid: 'Escribe una dirección de correo válida.',
+      listsRemove: 'Dejar de seguir',
       slackTitle: 'Canales de Slack',
       slackHint:
         'Marca los canales a ignorar. Los mensajes directos y las menciones directas siguen llegando.',
