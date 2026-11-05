@@ -5,6 +5,7 @@ import { isHidingState, PRESENCE_SCRIPT_ENCODED } from './presenceScript'
 import { getSettings } from './settingsStore'
 import { applyLayout } from './windows/apply'
 import { getBadgeWindow } from './windows/badge'
+import { shouldRescueBadge } from './badgeWatchdog'
 import { applyCaptureProtection } from './windows/capture'
 import { closePanel } from './windows/panel'
 
@@ -77,6 +78,7 @@ function applyVisibility(hide: boolean): void {
 
 // Starts following the settings and the state. Call once, after the windows exist.
 export function startPresence(): void {
+  const startedAt = Date.now()
   const sync = (): void => {
     if (getSettings().presentation.autoHide) startWatching()
     else stopWatching()
@@ -85,7 +87,24 @@ export function startPresence(): void {
   sync()
   onStateChange((state) => {
     sync()
-    applyVisibility(state.widgetHidden || state.presenting)
+    const hiddenOnPurpose = state.widgetHidden || state.presenting
+    applyVisibility(hiddenOnPurpose)
+    // Safety net, checked with every state update (about every 30 s): the widget must not stay out
+    // of sight when nobody hid it.
+    const badge = getBadgeWindow()
+    if (
+      badge &&
+      !badge.isDestroyed() &&
+      shouldRescueBadge({
+        visible: badge.isVisible(),
+        hiddenOnPurpose,
+        sinceStartMs: Date.now() - startedAt
+      })
+    ) {
+      logWarn('presence', 'the widget was not on screen and nobody hid it: showing it again')
+      applyLayout()
+      badge.showInactive()
+    }
   })
 }
 
