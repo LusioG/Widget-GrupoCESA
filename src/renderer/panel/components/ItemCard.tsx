@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { strings } from '@shared/strings'
 import type { Signal, SnoozeOption } from '@shared/types'
 import { dueLabel } from '@shared/dueLabel'
-import { AlertIcon, ClockIcon, UsersIcon, XIcon } from '@renderer/components/icons'
+import { AlertIcon, ClockIcon, UserIcon, UsersIcon, XIcon } from '@renderer/components/icons'
 import { PriorityFlag, SourceTag } from '@renderer/components/SourceBadge'
 
 type Props = {
@@ -51,6 +51,10 @@ export function ItemCard({
     window.api.items.act({ ids: [item.id], action: 'seen' })
   }
   const unread = item.threadId && !item.seen ? (item.unread ?? 0) : 0
+  // A direct message is one message: it gets the green dot with "!" until it is opened.
+  const newDirect = item.kind === 'dm' && !item.seen
+  // Who wrote it, for the messages of Slack (an email says it in its text).
+  const author = item.source === 'slack' && item.kind !== 'followup' ? item.sender : undefined
 
   return (
     <div
@@ -82,9 +86,15 @@ export function ItemCard({
               <span className="truncate">{item.list.name}</span>
             </span>
           )}
+          {author && (
+            <span className="mb-0.5 flex items-center gap-1 truncate text-xs font-semibold text-cesa-ink">
+              <UserIcon className="size-3.5 shrink-0 text-cesa-mute" />
+              <span className="truncate">{author}</span>
+            </span>
+          )}
           <span
             title={item.title}
-            className={`line-clamp-2 text-sm break-words ${item.seen ? 'text-cesa-mute' : 'text-cesa-ink'} ${unread > 0 ? 'font-semibold' : ''}`}
+            className={`line-clamp-2 text-sm break-words ${item.seen ? 'text-cesa-mute' : 'text-cesa-ink'} ${unread > 0 || newDirect ? 'font-semibold' : ''}`}
           >
             {item.title}
           </span>
@@ -108,6 +118,15 @@ export function ItemCard({
             <span className="inline-flex items-center gap-1 rounded-full border border-cesa-alert/50 px-1.5 py-0.5 text-xs font-semibold text-cesa-alert-text">
               <AlertIcon className="size-3" />
               {strings.panel.urgent}
+            </span>
+          )}
+          {newDirect && (
+            <span
+              title={strings.panel.newMessage}
+              aria-label={strings.panel.newMessage}
+              className="inline-flex min-w-5 items-center justify-center rounded-full bg-cesa-green px-1.5 py-0.5 text-xs font-bold text-cesa-950"
+            >
+              !
             </span>
           )}
           {unread > 0 && (

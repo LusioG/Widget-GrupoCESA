@@ -112,6 +112,13 @@ export const PanelRightIcon = (p: IconProps): React.JSX.Element => (
   </Icon>
 )
 
+export const UserIcon = (p: IconProps): React.JSX.Element => (
+  <Icon {...p}>
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </Icon>
+)
+
 export const UsersIcon = (p: IconProps): React.JSX.Element => (
   <Icon {...p}>
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />

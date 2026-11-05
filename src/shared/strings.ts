@@ -27,6 +27,7 @@ export const strings = {
     lists: 'Listas de distribución',
     listUnread: (n: number): string => (n === 1 ? '1 sin leer' : `${n} sin leer`),
     listOpen: 'Ver la conversación',
+    newMessage: 'Mensaje nuevo',
     meetingDay: (offset: number, label: string): string =>
       offset === 0 ? 'Hoy' : offset === 1 ? 'Mañana' : label,
     meetingUntil: (time: string): string => `hasta ${time}`,

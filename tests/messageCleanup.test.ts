@@ -84,7 +84,8 @@ describe('cleaning a whole message', () => {
   it('shows the text, folds the signature and drops the footer, keeping every link', () => {
     const { text, signature } = cleanMessageText(`${BODY}\n\n${SIGNATURE}\n\n${FOOTER}`)
     expect(text).toBe(BODY)
-    expect(signature).toBe(SIGNATURE)
+    // The asterisks Gmail puts around a whole bold signature are not part of it.
+    expect(signature).toBe(SIGNATURE.slice(1, -1))
     expect(signature).toContain('https://grupocesa.net/')
     expect(signature).toContain('https://linkedin.com/company/grupocesa')
   })
@@ -167,7 +168,7 @@ describe('attachments', () => {
     }
     const view = buildThreadView({ threadId: 'abc123', messages: [message], me: 'yo@cesa.com', lists: [] })
     expect(view.messages[0].text).toBe(BODY)
-    expect(view.messages[0].signature).toBe(SIGNATURE)
+    expect(view.messages[0].signature).toBe(SIGNATURE.slice(1, -1))
     expect(view.messages[0].attachments).toEqual(message.attachments)
     expect(JSON.stringify(view)).not.toContain('Has recibido')
   })

@@ -4,6 +4,7 @@
 
 export type RichPart =
   | { kind: 'text'; text: string }
+  | { kind: 'bold'; text: string }
   | { kind: 'link'; url: string; label: string }
   | { kind: 'image'; name: string }
 
@@ -23,7 +24,31 @@ export function linkLabel(url: string): string {
   }
 }
 
+// "*palabra*" is how Gmail's plain text writes a bold word. The opening asterisk comes first on a
+// line or after a space or an opening mark, and has a letter right after it; the closing one has a
+// letter right before it and ends the line or is followed by a space or a mark. So "2*3*4",
+// "* item" of a list and a lone asterisk stay as they are. One line at most.
+const BOLD = /(^|[\s(¡¿"'“‘—-])\*(?![\s*])([^*\n]{1,200}?)(?<![\s*])\*(?=$|[\s.,;:!?)"'”’—-])/gm
+
+function splitBold(text: string): RichPart[] {
+  const parts: RichPart[] = []
+  let last = 0
+  for (const match of text.matchAll(BOLD)) {
+    const start = (match.index ?? 0) + match[1].length // after the character before the asterisk
+    if (start > last) parts.push({ kind: 'text', text: text.slice(last, start) })
+    parts.push({ kind: 'bold', text: match[2] })
+    last = start + match[2].length + 2
+  }
+  if (last < text.length) parts.push({ kind: 'text', text: text.slice(last) })
+  return parts
+}
+
 export function toRichParts(text: string): RichPart[] {
+  return linkParts(text).flatMap((part) => (part.kind === 'text' ? splitBold(part.text) : [part]))
+}
+
+// Links and image markers first; the bold words are looked for in the text between them.
+function linkParts(text: string): RichPart[] {
   const parts: RichPart[] = []
   let last = 0
   const addText = (value: string): void => {

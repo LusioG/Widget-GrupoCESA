@@ -48,15 +48,19 @@ export function buildFakeSignals(now: number): Signal[] {
       body: '#ventas',
       url: 'https://slack.com',
       occurredAt: now - 20 * MIN,
+      sender: 'Ana Pérez',
+      channel: '#ventas',
       urgency: 0.6
     },
     {
       id: 'slack:fake-2',
       source: 'slack',
       kind: 'dm',
-      title: 'Mensaje directo: ¿tienes un minuto?',
+      title: '¿Tienes un minuto? Necesito que revises algo del servidor',
+      body: 'Mensaje directo',
       url: 'https://slack.com',
       occurredAt: now - 45 * MIN,
+      sender: 'Luis Gómez',
       urgency: 0.5
     },
     {
@@ -161,6 +165,22 @@ const RAW_LONG_MESSAGE = [
   'Para ver este debate, visita https://groups.google.com/a/grupocesa.net/d/msgid/desarrollo/abc.'
 ].join('\n')
 
+// A message as the sender's program leaves it: the lines are cut in the middle of the sentences,
+// and a bold word is written with asterisks.
+const RAW_CUT_MESSAGE = [
+  'Buenas, voy a hacer unas pequeñas pruebas de migracion de zoho desk a',
+  'zammad, sobretodo ver si puedo armar la skill para cuando toque hacer la',
+  'migracion,',
+  'Tengo algo de tiempo para encararlo y se que ustedes estan a full con proyectos, asique les comento las novedades de avance por aca.',
+  '',
+  'Ojo: *no tocar* el servidor de producción hasta que lo confirme.',
+  '',
+  'Saludos !',
+  '--',
+  'Has recibido este mensaje porque estás suscrito al grupo "Desarrollo" de Grupos de Google.',
+  'Para ver este debate, visita https://groups.google.com/a/grupocesa.net/d/msgid/desarrollo/abc.'
+].join('\n')
+
 // The conversations the demo opens, so the chat window can be seen without Gmail.
 export function buildFakeThread(threadId: string, now: number): ThreadView | null {
   const gmailUrl = `https://mail.google.com/mail/u/0/#all/${threadId}`
@@ -180,6 +200,14 @@ export function buildFakeThread(threadId: string, now: number): ThreadView | nul
             { name: 'Guia-acceso-Argos.pdf', size: 1_258_291, mime: 'application/pdf' },
             { name: 'inventario-servidores.xlsx', size: 84_300, mime: 'application/vnd.ms-excel' }
           ],
+          mine: false,
+          unread: false
+        },
+        {
+          id: 'm0b',
+          from: { name: 'Guido Lapiy', address: 'guido@grupocesa.net' },
+          at: now - 28 * HOUR,
+          ...cleanMessageText(RAW_CUT_MESSAGE),
           mine: false,
           unread: false
         },

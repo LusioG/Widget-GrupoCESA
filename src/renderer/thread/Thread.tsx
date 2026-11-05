@@ -56,6 +56,13 @@ function RichText({ text }: { text: string }): React.JSX.Element {
     <>
       {toRichParts(text).map((part, i) => {
         if (part.kind === 'text') return <span key={i}>{part.text}</span>
+        if (part.kind === 'bold') {
+          return (
+            <strong key={i} className="font-bold">
+              {part.text}
+            </strong>
+          )
+        }
         if (part.kind === 'image') {
           return (
             <span

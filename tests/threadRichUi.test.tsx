@@ -186,3 +186,19 @@ describe('conversation window: where it opens', () => {
     expect(within(document.body).queryByText(strings.thread.newMessage)).toBeNull()
   })
 })
+
+describe('conversation window: bold words', () => {
+  it('draws *word* as a bold word, without the asterisks', async () => {
+    await open(view([message({ text: 'Esto es *importante* y no *olvidar* nada' })]))
+    const bold = document.querySelectorAll('strong')
+    expect([...bold].map((b) => b.textContent)).toEqual(['importante', 'olvidar'])
+    expect(document.body.textContent).not.toContain('*')
+    expect(screen.getByText(/Esto es/)).toBeTruthy()
+  })
+
+  it('keeps a lone asterisk as it is', async () => {
+    await open(view([message({ text: 'precio 2*3 y * nota' })]))
+    expect(document.querySelectorAll('strong')).toHaveLength(0)
+    expect(document.body.textContent).toContain('2*3')
+  })
+})

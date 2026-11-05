@@ -65,7 +65,11 @@ function find(part: Part | undefined, mime: string): Part | undefined {
 // The readable text of a message: the plain-text part when there is one, else the HTML one.
 export function extractText(payload: Part | undefined): string {
   const plain = find(payload, 'text/plain')
-  if (plain) return decode(plain.body?.data, charsetOf(plain))
+  if (plain) {
+    const text = decode(plain.body?.data, charsetOf(plain))
+    const type = plain.headers?.find((h) => h.name?.toLowerCase() === 'content-type')?.value ?? ''
+    return /format=["']?flowed/i.test(type) ? unflow(text, /delsp=["']?yes/i.test(type)) : text
+  }
   const html = find(payload, 'text/html')
   if (html) return htmlToText(decode(html.body?.data, charsetOf(html)))
   return ''
@@ -148,12 +152,72 @@ export function splitSignature(text: string): { main: string; signature: string 
   return main ? { main, signature } : { main: text, signature: '' } // never an empty bubble
 }
 
-// The quoted earlier messages and the group footer go; the signature is set apart.
+// ---- lines that were cut by the sender's program ----
+
+// Email programs cut the plain text of a message into lines of 70 to 78 characters, so one
+// paragraph reaches us as "…de zoho desk a⏎zammad, sobretodo…". Gmail shows it flowing; here it
+// would look ragged. A line break is taken as one of those cuts when the line is about as long as
+// they make them AND the next word would not have fitted on it: then it is joined back. A line
+// break the author typed (a short line, a list item, an empty line) is left alone.
+const CUT_MIN = 58 // shorter lines were ended by the author
+const CUT_MAX = 80 // longer lines were not cut by anyone
+const CUT_WIDTH = 76 // where the programs cut: the next word did not fit within this
+const NEW_BLOCK = /^\s*([-*•>|#]|\d+[.)]|[a-z][.)])\s/i // a list item, a quote, a heading
+
+function isCut(previous: string, next: string): boolean {
+  if (previous.trim() === '' || next.trim() === '') return false
+  if (previous.length < CUT_MIN || previous.length > CUT_MAX || NEW_BLOCK.test(next)) return false
+  const nextWord = next.trim().split(/\s+/)[0]
+  return previous.trimEnd().length + 1 + nextWord.length > CUT_WIDTH
+}
+
+export function unwrapCutLines(text: string): string {
+  const lines = text.split('\n')
+  const out: string[] = []
+  let current = lines[0] ?? ''
+  let previousLine = current // the last line as it came: its length tells whether it was cut
+  for (const next of lines.slice(1)) {
+    if (isCut(previousLine, next)) current += ` ${next.trim()}`
+    else {
+      out.push(current)
+      current = next
+    }
+    previousLine = next
+  }
+  out.push(current)
+  return out.join('\n')
+}
+
+// format=flowed (RFC 3676): a line that ends with a space goes on in the next one.
+export function unflow(text: string, deleteSpace: boolean): string {
+  const out: string[] = []
+  let carry = ''
+  for (const line of text.split('\n')) {
+    const flowed = line.endsWith(' ') && !line.startsWith('>') && line.trim() !== '--'
+    const piece = carry + (flowed && deleteSpace ? line.slice(0, -1) : line)
+    if (flowed) carry = piece
+    else {
+      out.push(piece)
+      carry = ''
+    }
+  }
+  if (carry) out.push(carry)
+  return out.join('\n')
+}
+
+// Gmail writes a bold signature as "*…*": the asterisks around the whole block are not text.
+const unstar = (signature: string): string =>
+  signature.startsWith('*') && signature.endsWith('*') && signature.length > 2
+    ? signature.slice(1, -1).trim()
+    : signature
+
+// The quoted earlier messages and the group footer go; the signature is set apart; the lines
+// that the sender's program cut are joined again.
 export function cleanMessageText(raw: string): { text: string; signature: string } {
   const unquoted = stripQuoted(raw)
   const withoutFooter = removeGroupFooter(unquoted)
   const { main, signature } = splitSignature(withoutFooter || unquoted)
-  return { text: main, signature }
+  return { text: unwrapCutLines(main), signature: unstar(signature) }
 }
 
 const MAX_ATTACHMENTS = 20
