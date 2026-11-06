@@ -35,8 +35,8 @@ Las listas se reemplazan completas (no se combinan).
 | `filters.minLength` | 0 a 100 | Longitud mínima de un mensaje |
 | `filters.ignoredSenders` | lista de textos | Remitentes que se ignoran |
 | `filters.importantSenders` | lista de textos | Remitentes prioritarios (siempre urgentes) |
-| `filters.mutedChannels` | lista de textos (p. ej. `"#ventas"`) | Canales de Slack silenciados |
-| `filters.importantChannels` | lista de textos (p. ej. `"#soporte"`) | Canales de Slack donde toda mención tuya es urgente |
+| `filters.mutedChannels` | lista de textos (p. ej. `"#ventas"`) | Canales de Slack ignorados (en Ajustes, cada canal es Normal, Urgente o Ignorar) |
+| `filters.importantChannels` | lista de textos (p. ej. `"#soporte"`) | Canales de Slack urgentes: toda mención tuya ahí es urgente. Un canal va en una sola de las dos listas |
 | `followups.waitHours` | 1 a 720 | Horas de espera antes de un seguimiento |
 | `gmail.labelIds` | lista de ids (por defecto `["INBOX"]`) | Etiquetas de Gmail a vigilar |
 | `gmail.lists` | lista de `{"address": "soporte@empresa.com", "name": "Soporte", "urgent": false}` | Listas de distribución que se siguen (sección propia en el panel); `urgent`: todo lo que llega por la lista es urgente |
@@ -54,16 +54,29 @@ Las listas se reemplazan completas (no se combinan).
 | `calendar.show` | `"all"`, `"meets"`, `"plain"` | Todas, solo con videollamada o solo sin ella |
 | `profile.name` | texto, máx. 40 | Nombre para el saludo |
 | `briefing.enabled`, `briefing.time`, `briefing.fullHeight` | true/false, `"HH:MM"`, true/false | Resumen diario |
-| `ai.*` | (ver el archivo) | Opciones del resumen con IA; la clave de Gemini NO va aquí |
+| `ai.enabled` | true/false | Resumen escrito con IA (necesita la clave de Gemini, que NO va aquí) |
+| `ai.model` | texto | Modelo de Gemini |
+| `ai.sections` | lista con `"meetings"`, `"priorities"`, `"nextTasks"`, `"yesterday"`, `"waiting"`, `"since"` | Qué secciones lleva el resumen; lo que se quita no se envía a la IA |
+| `ai.extras` | hasta 10 textos de 120 caracteres | Pedidos de enfoque para la IA (ver abajo) |
+| `ai.sendMail` | true/false | Deja que la IA lea el asunto de los correos, también de las listas de distribución |
+| `ai.sendSlack` | true/false | Deja que la IA lea los mensajes de Slack y quién los escribió |
 | `onboardingDone` | true/false | Si ya se mostró la bienvenida |
+
+## Sobre `ai.extras`
+
+Un extra pide un enfoque, no trae datos nuevos: la IA solo habla de lo que le llega de las secciones
+activas de `ai.sections` (y de lo que permitan `ai.sendMail` y `ai.sendSlack`). Los correos y los
+mensajes llegan únicamente dentro de las prioridades, lo pendiente de ayer y lo que espera
+respuesta: si se quitan esas secciones, el resumen se queda sin correos ni listas. Pedir
+"resumen de las listas" o "últimos 3 correos" no funciona hoy, porque no hay una sección para eso.
 
 ## Lo que NO se puede configurar por archivo
 
 Las claves y cuentas se escriben en el widget (Ajustes → Cuentas), nunca en este archivo ni en la
 conversación, porque van cifradas y no deben pasar por un chat:
 
-- Token de Slack (`xoxp-…`, con los permisos de usuario `search:read`, `channels:read`, `groups:read`,
-  `im:read`, `mpim:read` y `users:read`; el widget consulta Slack cada 60 s).
+- Conexión de Slack: la persona pulsa «Conectar con Slack» en Ajustes → Cuentas y autoriza en el navegador. Solo si ese botón no está disponible se pega a mano un token de usuario (`xoxp-…`, con los permisos `search:read`, `channels:read`, `groups:read`,
+  `im:read`, `mpim:read` y `users:read`). El widget consulta Slack cada 60 s.
 - Token de ClickUp.
 - Client ID y secret de Google, y el inicio de sesión de Google (se autoriza en el navegador).
 - Clave de Gemini.
