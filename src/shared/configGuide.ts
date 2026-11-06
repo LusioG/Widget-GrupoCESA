@@ -87,7 +87,7 @@ Las claves y cuentas se escriben en el widget (Ajustes → Cuentas), nunca en es
 conversación, porque van cifradas y no deben pasar por un chat:
 
 - Conexión de Slack: la persona pulsa «Conectar con Slack» en Ajustes → Cuentas y autoriza en el navegador. Solo si ese botón no está disponible se pega a mano un token de usuario (\`xoxp-…\`, con los permisos \`search:read\`, \`channels:read\`, \`groups:read\`,
-  \`im:read\`, \`mpim:read\` y \`users:read\`). El widget consulta Slack cada 2,5 minutos.
+  \`im:read\`, \`mpim:read\` y \`users:read\`). El widget consulta Slack cada minuto.
 - Token de ClickUp.
 - Client ID y secret de Google, y el inicio de sesión de Google (se autoriza en el navegador).
 - Clave de Gemini.

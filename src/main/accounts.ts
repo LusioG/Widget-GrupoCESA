@@ -40,8 +40,10 @@ const CALENDAR_POLL_MS = 30 * 1000 // an incremental check is one tiny request; 
 const GMAIL_POLL_MS = 30 * 1000 // about 100 quota units a check with a few lists; 6,000/min per user
 // Slack's limit belongs to the WHOLE COMPANY: everyone uses the same app, and search.messages
 // allows "20+" requests per minute per workspace and app, for all of them together. Each check makes
-// 2 searches, so with 20 people open at once this is 16 per minute (60 s would be 40: over it).
-const SLACK_POLL_MS = 150 * 1000
+// 2 searches, so the load is people x 2 x (60 / seconds). At 60 s: 8 people = 16 per minute, 10 =
+// 20 (the limit). Opening the panel adds a little. MORE THAN 10 PEOPLE: raise it (12 people: 90 s,
+// 20 people: 150 s = 16 per minute).
+const SLACK_POLL_MS = 60 * 1000
 
 export { hasGoogleCredentials }
 
