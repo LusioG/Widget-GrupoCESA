@@ -6,7 +6,7 @@ import { AiSettings } from '@renderer/panel/views/settings/AiSettings'
 import { useAppStore } from '@renderer/store/useAppStore'
 import { DEFAULT_SETTINGS } from '@shared/settingsSchema'
 import { strings } from '@shared/strings'
-import type { AppState, Briefing as BriefingData } from '@shared/types'
+import type { AiAuditEntry, AppState, Briefing as BriefingData } from '@shared/types'
 
 const s = strings.settings.briefing.ai
 const sb = strings.briefing
@@ -14,6 +14,10 @@ const sb = strings.briefing
 const api = {
   openExternal: vi.fn(async () => undefined),
   threads: { open: vi.fn(async () => undefined) },
+  ai: {
+    auditList: vi.fn(async (): Promise<AiAuditEntry[]> => []),
+    auditClear: vi.fn(async () => undefined)
+  },
   settings: { update: vi.fn(async () => undefined) },
   briefing: {
     get: vi.fn(async (): Promise<BriefingData | null> => null),
@@ -223,5 +227,43 @@ describe('the summary window', () => {
       briefing({ notices: undefined, narrative: [{ key: 'since', text: 'Nada.', refs: [] }] })
     )
     expect(screen.getByText('Nada.')).toBeTruthy()
+  })
+})
+
+describe('history of what was sent to the AI', () => {
+  const entry = (id: number, over: Partial<AiAuditEntry> = {}): AiAuditEntry => ({
+    id,
+    at: new Date(2026, 10, 6, 9, id).getTime(),
+    provider: 'gemini',
+    model: 'gemini-test',
+    system: 'Eres el asistente personal',
+    user: 'Datos de hoy (JSON):\n{"reuniones":[{"titulo":"Daily"}]}',
+    ...over
+  })
+
+  it('says so when nothing was sent yet', async () => {
+    setAi()
+    render(<AiSettings />)
+    expect(await screen.findByText(s.auditEmpty)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: s.auditClear })).toBeNull()
+  })
+
+  it('lists each request, and shows the data and the instructions as they were sent', async () => {
+    api.ai.auditList.mockResolvedValue([entry(2), entry(1)])
+    setAi()
+    render(<AiSettings />)
+    expect(await screen.findAllByText('gemini-test')).toHaveLength(2)
+    expect(screen.getAllByText(s.auditData)).toHaveLength(2)
+    expect(screen.getAllByText(/"titulo": "Daily"/)).toHaveLength(2) // indented JSON
+    expect(screen.getAllByText('Eres el asistente personal')).toHaveLength(2)
+  })
+
+  it('deletes the history on request', async () => {
+    api.ai.auditList.mockResolvedValue([entry(1)])
+    setAi()
+    render(<AiSettings />)
+    fireEvent.click(await screen.findByRole('button', { name: s.auditClear }))
+    expect(api.ai.auditClear).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText(s.auditEmpty)).toBeTruthy()
   })
 })

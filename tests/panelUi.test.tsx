@@ -20,6 +20,7 @@ const api = {
   items: { act: vi.fn(async () => undefined), undo: vi.fn(async () => true) },
   sync: { refresh: vi.fn(async () => undefined) },
   briefing: { list: vi.fn(async () => []), open: vi.fn(async () => undefined) },
+  ai: { auditList: vi.fn(async () => []), auditClear: vi.fn(async () => undefined) },
   update: {
     check: vi.fn(async (): Promise<UpdateCheckResult> => 'latest'),
     install: vi.fn(async () => undefined)

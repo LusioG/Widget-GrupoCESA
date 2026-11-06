@@ -1,7 +1,7 @@
-import { eq, like } from 'drizzle-orm'
+import { desc, eq, like, notInArray } from 'drizzle-orm'
 import type { Briefing, InboxStatus, Signal, Source } from '../../shared/types'
 import { getDb } from './client'
-import { inboxItems, settings, signalsCache, syncState } from './schema'
+import { aiAuditLog, inboxItems, settings, signalsCache, syncState } from './schema'
 
 export type SyncStateRow = {
   source: Source
@@ -90,6 +90,37 @@ export async function saveSyncState(
 // Daily summaries are kept as they were shown, one per day, in the key/value table
 // (`briefing:YYYY-MM-DD`), so the database schema does not change.
 const BRIEFING_PREFIX = 'briefing:'
+export const AI_AUDIT_KEEP = 30
+export type AiAuditRow = { id: number; at: number; provider: string; payload: string }
+
+// Adds a request to the history of what was sent to the AI and drops the oldest ones.
+export async function addAiAudit(row: Omit<AiAuditRow, 'id'>): Promise<void> {
+  const db = getDb()
+  await db.insert(aiAuditLog).values(row)
+  // Everything but the newest AI_AUDIT_KEEP goes.
+  const newest = await db
+    .select({ id: aiAuditLog.id })
+    .from(aiAuditLog)
+    .orderBy(desc(aiAuditLog.id))
+    .limit(AI_AUDIT_KEEP)
+  if (newest.length === AI_AUDIT_KEEP) {
+    await db.delete(aiAuditLog).where(
+      notInArray(
+        aiAuditLog.id,
+        newest.map((row) => row.id)
+      )
+    )
+  }
+}
+
+export async function loadAiAudit(): Promise<AiAuditRow[]> {
+  return getDb().select().from(aiAuditLog).orderBy(desc(aiAuditLog.id)).limit(AI_AUDIT_KEEP)
+}
+
+export async function clearAiAudit(): Promise<void> {
+  await getDb().delete(aiAuditLog)
+}
+
 export const BRIEFING_KEEP = 7
 
 function isBriefing(value: unknown): value is Briefing {

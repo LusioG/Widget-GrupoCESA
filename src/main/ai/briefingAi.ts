@@ -249,6 +249,8 @@ export type WriteOptions = {
   ai: AiSettings
   now: number
   fetchImpl?: typeof fetch
+  // Told what is about to be sent, exactly as it goes, so it can be kept in the history.
+  onRequest?: (sent: { model: string; system: string; user: string }) => Promise<void> | void
 }
 
 // The summary written by the AI from the rules-based one. One request; a second only if the
@@ -261,6 +263,12 @@ export async function writeWithAi(base: Briefing, opts: WriteOptions): Promise<B
 
   let lastError: unknown
   for (let attempt = 0; attempt < 2; attempt++) {
+    // Kept before it leaves, so even a request that fails is in the history. Never stops the summary.
+    try {
+      await opts.onRequest?.({ model: opts.ai.model, system, user })
+    } catch {
+      // the history is not worth a failed summary
+    }
     const text = await askGemini({
       apiKey: opts.apiKey,
       model: opts.ai.model,

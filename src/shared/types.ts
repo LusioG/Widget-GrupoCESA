@@ -204,6 +204,17 @@ export type Briefing = {
 
 export type AiNoticeKey = 'mail' | 'lists' | 'slack'
 
+// One request sent to the AI, kept exactly as it left (already masked) so the person can check what
+// went out. The key is never part of it.
+export type AiAuditEntry = {
+  id: number
+  at: number
+  provider: string
+  model: string
+  system: string // the instructions
+  user: string // the data
+}
+
 export type AppState = {
   signals: Signal[]
   snoozed: Signal[] // postponed items, soonest to come back first

@@ -97,7 +97,9 @@ const api: Api = {
   ai: {
     saveKey: (key) => ipcRenderer.invoke(IPC.aiSaveKey, key),
     removeKey: () => ipcRenderer.invoke(IPC.aiRemoveKey),
-    test: () => ipcRenderer.invoke(IPC.aiTest)
+    test: () => ipcRenderer.invoke(IPC.aiTest),
+    auditList: () => ipcRenderer.invoke(IPC.aiAuditList),
+    auditClear: () => ipcRenderer.invoke(IPC.aiAuditClear)
   }
 }
 

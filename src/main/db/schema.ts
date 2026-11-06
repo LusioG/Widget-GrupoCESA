@@ -21,7 +21,7 @@ export const inboxItems = sqliteTable('inbox_items', {
   score: real('score').notNull().default(0)
 })
 
-// Reserved for the daily-summary phase (on hold). Nothing writes here yet.
+// What was sent to the AI, as it left (masked): the last AI_AUDIT_KEEP requests. See ai/auditLog.ts.
 export const aiAuditLog = sqliteTable('ai_audit_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   at: integer('at').notNull(),

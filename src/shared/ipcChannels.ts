@@ -41,6 +41,8 @@ export const IPC = {
   aiSaveKey: 'ai:save-key',
   aiRemoveKey: 'ai:remove-key',
   aiTest: 'ai:test',
+  aiAuditList: 'ai:audit-list',
+  aiAuditClear: 'ai:audit-clear',
   updateCheck: 'update:check',
   updateInstall: 'update:install',
   quitApp: 'system:quit',

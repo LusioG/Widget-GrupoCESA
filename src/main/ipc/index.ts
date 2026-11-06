@@ -35,6 +35,7 @@ import {
   openBriefing,
   regenerateBriefing
 } from '../briefing'
+import { clearAiAuditLog, listAiAudit } from '../ai/auditLog'
 import { refreshAll } from '../scheduler'
 import { checkForUpdatesNow, installUpdateNow } from '../updater'
 import { showTestNotifications } from '../notifier'
@@ -213,6 +214,8 @@ export function registerIpc(): void {
     const key = getSecret(GEMINI_KEY)
     return key ? checkGemini(key, getSettings().ai.model) : invalid
   })
+  ipcMain.handle(IPC.aiAuditList, () => listAiAudit())
+  ipcMain.handle(IPC.aiAuditClear, () => clearAiAuditLog())
   ipcMain.on(IPC.briefingClose, () => closeBriefingWindow())
   ipcMain.on(IPC.briefingFit, (_event, raw) => {
     const height = briefingHeightSchema.safeParse(raw)

@@ -1,5 +1,6 @@
 import { powerMonitor } from 'electron'
 import type { Briefing, BriefingSummary } from '../shared/types'
+import { recordAiRequest } from './ai/auditLog'
 import { writeWithAi } from './ai/briefingAi'
 import { GeminiError } from './ai/gemini'
 import { GEMINI_KEY } from './ai/key'
@@ -57,7 +58,12 @@ async function withAi(base: Briefing, now: number): Promise<Briefing> {
   const apiKey = ai.enabled ? getSecret(GEMINI_KEY) : undefined
   if (!apiKey) return base
   try {
-    return await writeWithAi(base, { apiKey, ai, now })
+    return await writeWithAi(base, {
+      apiKey,
+      ai,
+      now,
+      onRequest: (sent) => recordAiRequest(sent, Date.now())
+    })
   } catch (error) {
     // Only the kind of failure is logged, never what was sent or received.
     logWarn(

@@ -414,6 +414,14 @@ export const strings = {
         levelsMail: { titles: 'Asuntos', people: 'Asuntos y quién' },
         levelsSlack: { titles: 'Mensajes', people: 'Mensajes y quién' },
         masked: 'Antes de enviar se ocultan claves, correos, tarjetas y documentos.',
+        auditTitle: 'Historial de lo enviado a la IA',
+        auditHint:
+          'Cada consulta queda guardada tal como salió, con los datos sensibles ya ocultos (la clave nunca). Se guardan las últimas 30.',
+        auditEmpty: 'Todavía no se envió nada a la IA.',
+        auditData: 'Datos enviados',
+        auditInstructions: 'Instrucciones',
+        auditClear: 'Borrar historial',
+        auditCleared: 'Historial borrado.',
         topicsTitle: 'Qué quieres que traiga',
         topicsHint:
           'El tono y el formato son fijos. Aquí eliges qué incluye el resumen: quita lo que no quieras con la ✕. Lo que quitas no se envía a la IA. Lo que sí traiga depende de lo que le dejes leer más abajo.',

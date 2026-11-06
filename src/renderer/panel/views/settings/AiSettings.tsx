@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   BRIEFING_SECTIONS,
   MAX_EXTRA_LENGTH,
@@ -6,7 +6,7 @@ import {
   SECTION_TOPICS
 } from '@shared/briefingPrompt'
 import { strings } from '@shared/strings'
-import type { AiLevel, BriefingSectionKey, Settings } from '@shared/types'
+import type { AiAuditEntry, AiLevel, BriefingSectionKey, Settings } from '@shared/types'
 import { XIcon } from '@renderer/components/icons'
 import { Button, Card, Segment, TextField, Toggle } from '@renderer/components/ui'
 import { useAppStore } from '@renderer/store/useAppStore'
@@ -67,6 +67,81 @@ function LevelRow({
         }
       />
     </div>
+  )
+}
+
+const sentAt = new Intl.DateTimeFormat('es', {
+  day: '2-digit',
+  month: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit'
+})
+
+// The data of a request is "Datos de hoy (JSON):" and the JSON; shown with its indentation.
+function prettyData(user: string): string {
+  const at = user.indexOf('\n')
+  if (at < 0) return user
+  try {
+    return `${user.slice(0, at)}\n${JSON.stringify(JSON.parse(user.slice(at + 1)), null, 2)}`
+  } catch {
+    return user
+  }
+}
+
+// What was sent to the AI, as it left. Every request is kept (the last 30) so the person can check
+// what went out, and delete it.
+function AuditCard(): React.JSX.Element {
+  const [entries, setEntries] = useState<AiAuditEntry[] | null>(null)
+  const load = useCallback(() => {
+    void window.api.ai.auditList().then(setEntries)
+  }, [])
+  useEffect(load, [load])
+  const clear = async (): Promise<void> => {
+    await window.api.ai.auditClear()
+    setEntries([])
+  }
+
+  return (
+    <Card className="space-y-3">
+      <div>
+        <div className="text-sm font-semibold text-cesa-ink">{s.auditTitle}</div>
+        <div className="text-xs text-cesa-mute">{s.auditHint}</div>
+      </div>
+      {entries !== null && entries.length === 0 && (
+        <p className="text-xs text-cesa-mute">{s.auditEmpty}</p>
+      )}
+      <ul className="space-y-1.5">
+        {(entries ?? []).map((entry) => (
+          <li key={entry.id} className="rounded-lg border border-cesa-700 bg-cesa-700/30">
+            <details>
+              <summary className="flex min-h-6 cursor-pointer items-center justify-between gap-2 px-2.5 py-1 text-sm text-cesa-ink">
+                <span>{sentAt.format(entry.at)}</span>
+                <span className="truncate text-xs text-cesa-mute">{entry.model}</span>
+              </summary>
+              <div className="space-y-2 px-2.5 pb-2">
+                <div>
+                  <div className="text-xs font-semibold text-cesa-mute">{s.auditData}</div>
+                  <pre className="cesa-scroll max-h-56 overflow-auto rounded-md bg-cesa-900 p-2 text-xs whitespace-pre-wrap text-cesa-ink select-text">
+                    {prettyData(entry.user)}
+                  </pre>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-cesa-mute">{s.auditInstructions}</div>
+                  <pre className="cesa-scroll max-h-40 overflow-auto rounded-md bg-cesa-900 p-2 text-xs whitespace-pre-wrap text-cesa-mute select-text">
+                    {entry.system}
+                  </pre>
+                </div>
+              </div>
+            </details>
+          </li>
+        ))}
+      </ul>
+      {entries !== null && entries.length > 0 && (
+        <Button variant="ghost" onClick={() => void clear()}>
+          {s.auditClear}
+        </Button>
+      )}
+    </Card>
   )
 }
 
@@ -374,6 +449,8 @@ export function AiSettings(): React.JSX.Element {
             />
             <p className="text-xs text-cesa-mute">{s.masked}</p>
           </Card>
+
+          <AuditCard />
         </>
       )}
     </div>

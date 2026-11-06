@@ -1,6 +1,7 @@
 import type { SettingsPatch } from './settingsSchema'
 import type {
   ActionResult,
+  AiAuditEntry,
   AppState,
   AvailableList,
   Briefing,
@@ -104,5 +105,7 @@ export interface Api {
     saveKey(key: string): Promise<ActionResult> // stores it after checking it works
     removeKey(): Promise<void>
     test(): Promise<ActionResult> // checks the stored key with the chosen model
+    auditList(): Promise<AiAuditEntry[]> // what was sent, newest first (the last 30)
+    auditClear(): Promise<void>
   }
 }
