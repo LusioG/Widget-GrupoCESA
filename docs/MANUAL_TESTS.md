@@ -58,7 +58,7 @@ Leyenda: ✅ verificado · ⚠️ verificado con límites · ⏳ pendiente · �
 | Botón _Cerrar widget_ (Ajustes): pide confirmar y termina el proceso                                          | ✅ Auto    |                                                                                                                                                      |
 | Reuniones por días (Hoy / 2 días / 3 días / 1 semana / 2 semanas): qué se ve y qué pide a Google              | ✅ Pruebas | Con reloj simulado y un Google simulado. **Con tu calendario real falta probarlo** (elegir "1 semana" y ver que aparecen las reuniones de la semana) |
 | Con la solapa a la izquierda, las barras de scroll van al borde izquierdo (a la derecha ya iban a la derecha) | ✅ Auto    | Medido en la app real y con captura. El popup flotante conserva la barra a la derecha                                                                |
-| Calendar: consulta cada 60 s y al abrir el panel si los datos tienen más de 30 s                              | ✅ Auto    | Pruebas con reloj simulado. **Con tu Google real sigue sin probarse**                                                                                |
+| Calendar: consulta cada 30 s y al abrir el panel si los datos tienen más de 30 s                              | ✅ Auto    | Pruebas con reloj simulado. **Con tu Google real sigue sin probarse**                                                                                |
 
 ## Accesibilidad del panel
 

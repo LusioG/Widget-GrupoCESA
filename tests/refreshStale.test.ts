@@ -67,3 +67,36 @@ describe('refreshStale (opening the panel)', () => {
     expect(sync).toHaveBeenCalled()
   })
 })
+
+describe('refreshStale for a slow account (Slack: its limit is shared by the whole company)', () => {
+  const slow = vi.fn(async () => [])
+  const slack = {
+    id: 'slack',
+    isConnected: async () => true,
+    connect: async () => undefined,
+    disconnect: async () => undefined,
+    sync: slow
+  } as unknown as Connector
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    slow.mockClear()
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('is not checked on every opening of the panel, only once half its period has passed', async () => {
+    registerConnector(slack, 150_000)
+    await refreshAll() // a check that just happened
+    slow.mockClear()
+
+    await vi.advanceTimersByTimeAsync(40_000) // older than 30 s, younger than half of 150 s
+    refreshStale(30_000)
+    await vi.advanceTimersByTimeAsync(100)
+    expect(slow).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(40_000) // 80 s: past 75 s
+    refreshStale(30_000)
+    await vi.advanceTimersByTimeAsync(100)
+    expect(slow).toHaveBeenCalledTimes(1)
+  })
+})

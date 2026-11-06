@@ -126,12 +126,15 @@ export function syncAll(): void {
 }
 
 // Opening the panel: anything not checked in the last maxAgeMs is checked now, so what you see
-// is never older than that, without waiting for the next polling cycle.
+// is never older than that, without waiting for the next polling cycle. A slow account (Slack,
+// whose limit is shared by the whole company) is only checked early once half its own period has
+// passed, so opening the panel often does not multiply its requests.
 export function refreshStale(maxAgeMs: number): void {
   if (!started) return
   const now = Date.now()
   for (const task of tasks.values()) {
-    if (task.halted || task.running || now - task.lastRunAt < maxAgeMs) continue
+    const limit = Math.max(maxAgeMs, task.baseMs / 2)
+    if (task.halted || task.running || now - task.lastRunAt < limit) continue
     schedule(task, 0)
   }
 }

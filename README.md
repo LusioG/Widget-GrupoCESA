@@ -200,8 +200,8 @@ ningún secreto dentro del widget, y el token se renueva solo (si pasa un mes si
 tarjeta pide volver a conectar). Detalles de la app de la empresa en `CLAUDE.md`.
 
 **Alternativa (token a mano):** si el botón no está disponible, o prefieres tu propia app, el widget
-**consulta Slack cada 60 s** con solo el _User OAuth Token_ (`xoxp-`): no usa Socket Mode ni _App-Level
-Token_. Un mensaje nuevo puede tardar hasta un minuto (más lo que tarde el índice de búsqueda de Slack)
+**consulta Slack cada 2,5 minutos** con solo el _User OAuth Token_ (`xoxp-`): no usa Socket Mode ni _App-Level
+Token_. Un mensaje nuevo puede tardar hasta 2,5 minutos (más lo que tarde el índice de búsqueda de Slack)
 en aparecer. La tarjeta de Slack incluye esta guía:
 
 > **Atajo:** en [api.slack.com/apps](https://api.slack.com/apps) elige **Create New App → From a

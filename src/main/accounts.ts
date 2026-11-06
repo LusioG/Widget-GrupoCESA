@@ -23,17 +23,8 @@ import { GmailConnector } from './connectors/gmail'
 import { threadUrl } from './connectors/gmail/mapper'
 import { hasGoogleCredentials, saveGoogleCredentials } from './connectors/google/auth'
 import { SlackConnector } from './connectors/slack'
-import {
-  ApiDisabledError,
-  AuthError,
-  type Connector
-} from './connectors/types'
-import {
-  clearSource,
-  getSyncState,
-  loadCachedSignals,
-  saveSyncState
-} from './db/repos'
+import { ApiDisabledError, AuthError, type Connector } from './connectors/types'
+import { clearSource, getSyncState, loadCachedSignals, saveSyncState } from './db/repos'
 import { haltSource, registerConnector, syncNow } from './scheduler'
 
 const clickup = new ClickUpConnector()
@@ -42,10 +33,15 @@ const gmail = new GmailConnector()
 const slack = new SlackConnector()
 const connectors: Record<Source, Connector> = { clickup, calendar, gmail, slack }
 
-const CLICKUP_POLL_MS = 3 * 60 * 1000 // each check reads several pages of tasks: keep well under 100 requests/min
-const CALENDAR_POLL_MS = 60 * 1000 // an incremental check is one tiny request
-const GMAIL_POLL_MS = 60 * 1000
-const SLACK_POLL_MS = 60 * 1000 // two searches per check, far below Slack's limits
+// How often each account is checked. ClickUp (a token per person), Calendar and Gmail (a Google
+// project per person for now) have limits that belong to each person, so they can be quick:
+const CLICKUP_POLL_MS = 60 * 1000 // up to 5 requests a check (100 tasks each); 100 requests/min per token
+const CALENDAR_POLL_MS = 30 * 1000 // an incremental check is one tiny request; 600/min per user
+const GMAIL_POLL_MS = 30 * 1000 // about 100 quota units a check with a few lists; 6,000/min per user
+// Slack's limit belongs to the WHOLE COMPANY: everyone uses the same app, and search.messages
+// allows "20+" requests per minute per workspace and app, for all of them together. Each check makes
+// 2 searches, so with 20 people open at once this is 16 per minute (60 s would be 40: over it).
+const SLACK_POLL_MS = 150 * 1000
 
 export { hasGoogleCredentials }
 
