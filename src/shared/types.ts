@@ -159,6 +159,7 @@ export type BriefingItem = {
   priority?: TaskPriority
   from?: string // who wrote it: the author of a Slack message, the sender of a mail, a list's voices
   listName?: string // a conversation of a distribution list: which one
+  threadId?: string // ... and its Gmail conversation, to open it in the chat window
   urgent: boolean
   note?: string // written by the AI: why it matters
 }

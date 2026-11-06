@@ -13,6 +13,7 @@ const sb = strings.briefing
 
 const api = {
   openExternal: vi.fn(async () => undefined),
+  threads: { open: vi.fn(async () => undefined) },
   settings: { update: vi.fn(async () => undefined) },
   briefing: {
     get: vi.fn(async (): Promise<BriefingData | null> => null),
@@ -170,6 +171,51 @@ describe('the summary window', () => {
     expect(screen.getByText('Soporte CESA')).toBeTruthy()
     expect(screen.getByText(sb.listCounts(2, 6))).toBeTruthy()
     expect(screen.getByText('Caída en la sede norte')).toBeTruthy()
+  })
+
+  it('opens a list conversation in the chat window, and a single mail in the browser', async () => {
+    const mail = {
+      id: 'gmail:m1',
+      source: 'gmail' as const,
+      kind: 'email' as const,
+      title: 'Asunto uno',
+      url: 'https://mail.google.com/m1',
+      urgent: false
+    }
+    const conversation = {
+      ...mail,
+      id: 'gmail:list:18fa11aa11aa11aa:m4',
+      title: 'Caída en la sede norte',
+      url: 'https://mail.google.com/list',
+      listName: 'Soporte CESA',
+      threadId: '18fa11aa11aa11aa'
+    }
+    await show(
+      briefing({
+        narrative: [{ key: 'since', text: 'Hay novedades.', refs: [] }],
+        mail: [mail],
+        lists: [
+          {
+            address: 'soporte@cesa.com',
+            name: 'Soporte CESA',
+            conversations: 1,
+            unread: 1,
+            urgent: false,
+            items: [conversation]
+          }
+        ]
+      })
+    )
+    fireEvent.click(screen.getByRole('button', { name: sb.details }))
+    fireEvent.click(screen.getByText('Caída en la sede norte'))
+    expect(api.threads.open).toHaveBeenCalledWith({
+      threadId: '18fa11aa11aa11aa',
+      signalId: 'gmail:list:18fa11aa11aa11aa:m4',
+      title: 'Caída en la sede norte'
+    })
+    expect(api.openExternal).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText('Asunto uno'))
+    expect(api.openExternal).toHaveBeenCalledWith('https://mail.google.com/m1')
   })
 
   it('opens a summary saved before these sections existed', async () => {

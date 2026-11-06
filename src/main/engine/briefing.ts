@@ -59,6 +59,7 @@ function toItem(s: Signal): BriefingItem {
         : undefined
   if (from) item.from = from
   if (s.list) item.listName = s.list.name
+  if (s.list && s.threadId) item.threadId = s.threadId
   return item
 }
 

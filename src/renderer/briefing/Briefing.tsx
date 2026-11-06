@@ -30,8 +30,14 @@ function SectionTitle({ children }: { children: string }): React.JSX.Element {
   )
 }
 
-// Opens the original in the browser; the summary stays where it is.
+// Opens the original in the browser; the summary stays where it is. A conversation of a
+// distribution list opens in the chat window instead, as it does in the panel.
 const open = (url: string): void => void window.api.openExternal(url)
+const openItem = (item: BriefingItem): void => {
+  if (item.threadId) {
+    void window.api.threads.open({ threadId: item.threadId, signalId: item.id, title: item.title })
+  } else open(item.url)
+}
 
 function Meeting({ item, now }: { item: BriefingItem; now: number }): React.JSX.Element {
   const start = item.startsAt
@@ -81,7 +87,7 @@ function Row({
     <li>
       <button
         type="button"
-        onClick={() => open(item.url)}
+        onClick={() => openItem(item)}
         title={`${s.open}: ${item.title}`}
         className="flex w-full cursor-pointer items-start gap-3 rounded-xl border border-cesa-700 bg-cesa-700/30 px-3 py-2.5 text-left transition hover:border-cesa-green/50 hover:bg-cesa-700/60"
       >
@@ -237,7 +243,7 @@ function Chip({ item }: { item: BriefingItem }): React.JSX.Element {
   return (
     <button
       type="button"
-      onClick={() => open(joinable ? item.meetingUrl! : item.url)}
+      onClick={() => (joinable ? open(item.meetingUrl!) : openItem(item))}
       title={item.title}
       className={`inline-flex min-h-6 max-w-full cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition ${
         joinable

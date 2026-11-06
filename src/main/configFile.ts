@@ -67,7 +67,7 @@ async function readExternalChange(): Promise<void> {
 
   let patch: unknown
   try {
-    const parsed = JSON.parse(raw.replace(/^﻿/, '')) as Record<string, unknown>
+    const parsed = JSON.parse(raw.replace(/^\uFEFF/, '')) as Record<string, unknown>
     delete parsed['_ayuda']
     patch = parsed
   } catch {
