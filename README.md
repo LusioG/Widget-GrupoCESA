@@ -33,7 +33,8 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
     **tareas nunca hacen pulsar**: solo suman a los contadores (y al círculo rojo si son urgentes).
     En modo foco solo pulsa un mensaje urgente.
   - **Pulso verde:** una reunión empieza en menos de 10 minutos o está en curso (no en modo foco).
-  - El borde rojo del widget sigue marcando que hay algo urgente, sea del tipo que sea.- **Panel** con reuniones (botón _Unirse_, amarillo en las de hoy y verde en las de otros días), pendientes ordenados por urgencia y "Esperando respuesta".
+  - El borde rojo del widget sigue marcando que hay algo urgente, sea del tipo que sea.
+- **Panel** con reuniones (botón _Unirse_, amarillo en las de hoy y verde en las de otros días), pendientes ordenados por urgencia y "Esperando respuesta".
 - **Listas de distribución** (grupos de Google a los que escribe más de una persona): en **Fuentes y
   filtros** eliges las que quieres seguir (el widget las busca en tus correos recientes, o las añades
   por dirección) y cuántos días hacia atrás ver (1, 3 o 7). Aparecen **arriba del panel**, una tarjeta por
@@ -177,7 +178,7 @@ Permisos que se piden (solo lectura):
 | Función  | Permiso                    | Qué permite                                                       |
 | -------- | -------------------------- | ----------------------------------------------------------------- |
 | Calendar | `calendar.events.readonly` | Ver eventos                                                       |
-| Gmail    | `gmail.metadata`           | Ver **cabeceras y etiquetas**, nunca el contenido ni los adjuntos |
+| Gmail    | `gmail.readonly`           | Leer correos y etiquetas, solo lectura. El texto de un mensaje se lee solo al abrir una conversación de una lista, y no se guarda ni se envía a la IA |
 
 Notas importantes:
 
@@ -238,7 +239,7 @@ canales que quieres ignorar.
   `%APPDATA%\widget\secrets.bin`. Nunca en texto plano, ni en el código, ni en los registros.
 - **Caché local** (`%APPDATA%\widget\widget.db`, **sin cifrar**): títulos de tareas, texto de
   mensajes de Slack, asuntos y fragmentos de correos, remitentes, y qué descartaste o pospusiste.
-  Gmail nunca descarga cuerpos ni adjuntos.
+  Gmail no guarda cuerpos ni adjuntos: el texto de una conversación de una lista se lee al abrirla y no se guarda.
 - **Registros** (`%APPDATA%\widget\logs\widget.log`): solo eventos y errores técnicos, con
   cualquier credencial, correo o ruta personal enmascarados. Nunca contenido de mensajes ni tareas.
   Se rotan automáticamente (máx. ~1 MB).
