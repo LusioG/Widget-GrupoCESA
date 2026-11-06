@@ -66,25 +66,51 @@ describe('a direct message of Slack in the panel', () => {
   })
 })
 
-describe('other items', () => {
-  it('a mention shows who wrote it but has no green dot', () => {
-    show(dm({ kind: 'mention', body: '#ventas', channel: '#ventas' }))
+const email = (over: Partial<Signal> = {}): Signal => ({
+  id: 'gmail:1',
+  source: 'gmail',
+  kind: 'email',
+  title: 'Contrato',
+  body: 'Ana · Hola',
+  url: 'https://mail.google.com',
+  occurredAt: NOW,
+  sender: 'Ana <ana@x.com>',
+  ...over
+})
+
+describe('the green dot on the other new messages', () => {
+  it('a mention shows who wrote it and has the dot until it is opened', () => {
+    const mention = dm({ kind: 'mention', body: '#ventas', channel: '#ventas' })
+    const { rerender } = render(<ItemCard item={mention} now={NOW} />)
     expect(screen.getByText('Ana Pérez')).toBeTruthy()
+    expect(screen.getByLabelText(strings.panel.newMessage).textContent).toBe('!')
+    rerender(<ItemCard item={{ ...mention, seen: true }} now={NOW} />)
     expect(screen.queryByLabelText(strings.panel.newMessage)).toBeNull()
   })
 
-  it('an email does not repeat the sender: its text already says it', () => {
-    show({
-      id: 'gmail:1',
-      source: 'gmail',
-      kind: 'email',
-      title: 'Contrato',
-      body: 'Ana · Hola',
-      url: 'https://mail.google.com',
-      occurredAt: NOW,
-      sender: 'Ana <ana@x.com>'
-    })
+  it('an email has the dot until it is opened, and does not repeat the sender', () => {
+    const { rerender } = render(<ItemCard item={email()} now={NOW} />)
     expect(screen.queryByText('Ana <ana@x.com>')).toBeNull()
+    expect(screen.getByLabelText(strings.panel.newMessage).textContent).toBe('!')
+    rerender(<ItemCard item={email({ seen: true })} now={NOW} />)
+    expect(screen.queryByLabelText(strings.panel.newMessage)).toBeNull()
+  })
+
+  it('a conversation of a list keeps its count and gets no "!"', () => {
+    show(
+      email({
+        id: 'gmail:list:18fa11aa11aa11aa:m4',
+        threadId: '18fa11aa11aa11aa',
+        unread: 3,
+        list: { address: 'soporte@cesa.com', name: 'Soporte' }
+      })
+    )
+    expect(screen.getByLabelText(strings.panel.listUnread(3))).toBeTruthy()
+    expect(screen.queryByLabelText(strings.panel.newMessage)).toBeNull()
+  })
+
+  it('a task has no dot', () => {
+    show(email({ id: 'clickup:1', source: 'clickup', kind: 'task', title: 'Enviar propuesta' }))
     expect(screen.queryByLabelText(strings.panel.newMessage)).toBeNull()
   })
 })

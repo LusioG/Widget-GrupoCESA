@@ -7,7 +7,7 @@ import { initInbox, onStateChange, setAppVersion, setSourceSignals, startTicker 
 import { initBriefings, startBriefing, stopBriefing } from './briefing'
 import { closeDb, initDb, wasDatabaseReset } from './db/client'
 import { deliverProtocolUrl, registerProtocol, urlFromArgv } from './auth/slackSignIn'
-import { buildFakeSignals, FAKE_LISTS } from './fakeData'
+import { buildFakeMention, buildFakeSignals, FAKE_LISTS } from './fakeData'
 import { applyHotkey, releaseHotkey } from './hotkey'
 import { registerIpc } from './ipc'
 import { logError, logInfo, logWarn } from './logger'
@@ -116,6 +116,13 @@ if (!app.requestSingleInstanceLock()) {
             fake.filter((s) => s.source === source)
           )
         }
+        // A new Slack mention arrives 20 s after start, so the pulse of a new message can be seen.
+        setTimeout(() => {
+          setSourceSignals('slack', [
+            ...fake.filter((s) => s.source === 'slack'),
+            buildFakeMention(Date.now())
+          ])
+        }, 20_000)
       } else {
         startScheduler(FIRST_SYNC_DELAY_MS)
       }

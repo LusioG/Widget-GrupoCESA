@@ -113,6 +113,23 @@ export function buildFakeSignals(now: number): Signal[] {
   ]
 }
 
+// A Slack mention that "arrives" while the demo runs, to see the red pulse of a new message (a
+// normal one, not urgent).
+export function buildFakeMention(now: number): Signal {
+  return {
+    id: `slack:fake-live-${now}`,
+    source: 'slack',
+    kind: 'mention',
+    title: '@luciano ¿viste el cambio que subí al canal? Avísame si lo ves bien',
+    body: '#desarrollo',
+    url: 'https://slack.com',
+    occurredAt: now,
+    sender: 'Marta Díaz',
+    channel: '#desarrollo',
+    urgency: 0.5
+  }
+}
+
 // The lists of the demo, in the settings of the (isolated) demo profile.
 export const FAKE_LISTS = [
   { address: 'soporte@cesa.com', name: 'Soporte CESA', urgent: true },

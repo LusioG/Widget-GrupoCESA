@@ -51,8 +51,13 @@ export function ItemCard({
     window.api.items.act({ ids: [item.id], action: 'seen' })
   }
   const unread = item.threadId && !item.seen ? (item.unread ?? 0) : 0
-  // A direct message is one message: it gets the green dot with "!" until it is opened.
-  const newDirect = item.kind === 'dm' && !item.seen
+  // A direct message, a mention or an email is one message: it gets the green dot with "!" until it
+  // is opened. A conversation of a list has its count of unread messages instead.
+  const isOneMessage =
+    item.kind === 'dm' ||
+    item.kind === 'mention' ||
+    (item.kind === 'email' && !item.threadId)
+  const newDirect = isOneMessage && !item.seen
   // Who wrote it, for the messages of Slack (an email says it in its text).
   const author = item.source === 'slack' && item.kind !== 'followup' ? item.sender : undefined
 
