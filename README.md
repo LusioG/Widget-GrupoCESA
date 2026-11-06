@@ -21,7 +21,9 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
     respuesta) que NO son urgentes: un pendiente urgente se cuenta solo en el círculo rojo, no
     también en el verde. Las reuniones no cuentan. En modo foco cuenta solo los urgentes.
   - **Círculo rojo:** cuántos de esos pendientes son urgentes. Solo aparece si hay alguno.
-  - **Círculo amarillo:** reuniones en curso o de las próximas 12 horas. Solo aparece si hay alguna.
+  - **Círculo amarillo:** reuniones en curso o de las próximas 12 horas. Solo aparece si hay alguna. En el panel,
+    cada una de esas reuniones lleva un puntito amarillo con "!" (como el verde de los mensajes
+    nuevos) que se mantiene hasta que termina la reunión.
   - En el **popup** los círculos salen en las esquinas del logo (rojo arriba a la izquierda,
     verde arriba a la derecha, amarillo abajo a la derecha). En la **solapa**, la barra se estira
     hacia abajo, de arriba abajo: logo, círculo **rojo**, círculo **amarillo**, número **verde** y

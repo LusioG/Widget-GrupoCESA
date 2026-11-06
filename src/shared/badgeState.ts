@@ -6,7 +6,14 @@ export const MEETING_SOON_MS = 10 * 60 * 1000
 export const MEETING_COUNT_WINDOW_MS = 12 * 60 * 60 * 1000
 export const URGENT_THRESHOLD = 0.8
 
-const isMessage = (s: Signal): boolean =>
+// A meeting that is running or starts within 12 hours: it is in the yellow circle and its card in
+// the panel carries the yellow "!" until it ends.
+export const isMeetingNear = (s: Signal, now: number): boolean =>
+  s.kind === 'meeting' &&
+  (s.startsAt ?? s.occurredAt) - now < MEETING_COUNT_WINDOW_MS &&
+  (s.endsAt ?? s.startsAt ?? s.occurredAt) > now
+
+const isMessage =(s: Signal): boolean =>
   s.kind === 'email' || s.kind === 'dm' || s.kind === 'mention'
 
 // In focus mode only urgent items count and the "meeting soon" highlight is silenced.
@@ -37,12 +44,7 @@ export function computeBadge(
     count: focus ? urgentItems.length : pending.length - urgentItems.length,
     urgent: urgentItems.length > 0,
     urgentCount: urgentItems.length,
-    meetingCount: signals.filter(
-      (s) =>
-        s.kind === 'meeting' &&
-        (s.startsAt ?? s.occurredAt) - now < MEETING_COUNT_WINDOW_MS &&
-        (s.endsAt ?? s.startsAt ?? s.occurredAt) > now
-    ).length,
+    meetingCount: signals.filter((s) => isMeetingNear(s, now)).length,
     // A new mail or Slack message pulses red; in focus mode only an urgent one does.
     messageAlert: pending.some(
       (s) =>

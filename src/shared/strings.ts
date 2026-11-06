@@ -28,6 +28,7 @@ export const strings = {
     listUnread: (n: number): string => (n === 1 ? '1 sin leer' : `${n} sin leer`),
     listOpen: 'Ver la conversación',
     newMessage: 'Mensaje nuevo',
+    meetingNear: 'Reunión en curso o en las próximas 12 horas',
     meetingDay: (offset: number, label: string): string =>
       offset === 0 ? 'Hoy' : offset === 1 ? 'Mañana' : label,
     meetingUntil: (time: string): string => `hasta ${time}`,

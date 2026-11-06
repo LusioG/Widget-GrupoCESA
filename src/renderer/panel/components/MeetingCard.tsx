@@ -1,3 +1,4 @@
+import { isMeetingNear } from '@shared/badgeState'
 import { dayOffset } from '@shared/calendarWindow'
 import { meetingMove, moveLabel } from '@shared/meetingMove'
 import { strings } from '@shared/strings'
@@ -44,6 +45,17 @@ export function MeetingCard({ meeting, now, onActed }: Props): React.JSX.Element
           </div>
         )}
       </div>
+      {/* Like the green "!" of a new message, in the yellow of the meetings: it stays while the
+          meeting is running or less than 12 hours away, and goes when it ends (the card too). */}
+      {isMeetingNear(meeting, now) && (
+        <span
+          title={strings.panel.meetingNear}
+          aria-label={strings.panel.meetingNear}
+          className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-cesa-meeting px-1.5 py-0.5 text-xs font-bold text-cesa-950"
+        >
+          !
+        </span>
+      )}
       {meeting.meetingUrl && (
         <button
           type="button"
