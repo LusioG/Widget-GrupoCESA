@@ -115,14 +115,27 @@ export type Settings = {
     // else the user added. The tone and the answer format are fixed in the app.
     sections: BriefingSectionKey[]
     extras: string[]
-    sendMail: boolean // let the AI read the subject and sender of mail
-    sendSlack: boolean // let the AI read Slack messages
+    // How much of each source the AI may read (see AiLevel). Counts only, unless the user raises it.
+    mail: AiLevel
+    lists: AiLevel
+    slack: AiLevel
   }
   onboardingDone: boolean
 }
 
+// What the AI may read of a source: only how many there are, the subject / text of each one, or
+// that and who wrote it. The text of the messages themselves is never sent.
+export type AiLevel = 'counts' | 'titles' | 'people'
+
 export type BriefingSectionKey =
-  'meetings' | 'priorities' | 'nextTasks' | 'yesterday' | 'waiting' | 'since'
+  | 'meetings'
+  | 'priorities'
+  | 'nextTasks'
+  | 'yesterday'
+  | 'waiting'
+  | 'mail'
+  | 'lists'
+  | 'since'
 
 // A section of the summary written in words by the AI; `refs` are the items it talks about.
 export type BriefingNarrativeSection = {
@@ -144,9 +157,20 @@ export type BriefingItem = {
   meetingUrl?: string
   dueAt?: number
   priority?: TaskPriority
-  from?: string // Slack: who wrote the message
+  from?: string // who wrote it: the author of a Slack message, the sender of a mail, a list's voices
+  listName?: string // a conversation of a distribution list: which one
   urgent: boolean
   note?: string // written by the AI: why it matters
+}
+
+// What is new in one distribution list: how many conversations and unread messages, and the latest.
+export type BriefingList = {
+  address: string
+  name: string
+  conversations: number
+  unread: number
+  urgent: boolean
+  items: BriefingItem[] // the most recent conversations
 }
 
 // One entry of the list of past summaries.
@@ -165,11 +189,19 @@ export type Briefing = {
   nextTasks: BriefingItem[] // the next 3 ordinary tasks to fall due
   yesterday: BriefingItem[] // still pending from yesterday
   waiting: BriefingItem[] // sent and not answered
+  // The two below came later: a summary saved before them does not have them.
+  mail?: BriefingItem[] // the latest individual mails that are still unread
+  mailTotal?: number // how many of those there are in all
+  lists?: BriefingList[] // what is new in each distribution list
   since: { emails: number; messages: number } // new since the last summary
   // Only when the AI wrote it: the summary in words, with links to the items it mentions. The
   // lists above stay as the detail behind it.
   narrative?: BriefingNarrativeSection[]
+  // Only when the AI wrote it: what it could not see and why (a source set to "counts only").
+  notices?: AiNoticeKey[]
 }
+
+export type AiNoticeKey = 'mail' | 'lists' | 'slack'
 
 export type AppState = {
   signals: Signal[]

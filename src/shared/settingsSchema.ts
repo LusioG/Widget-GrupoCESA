@@ -77,6 +77,7 @@ const gmail = z.object({
 })
 const profile = z.object({ name: z.string().trim().max(40) })
 const briefing = z.object({ enabled: z.boolean(), time: hhmm, fullHeight: z.boolean() })
+const aiLevel = z.enum(['counts', 'titles', 'people'])
 const ai = z.object({
   enabled: z.boolean(),
   model: z
@@ -86,11 +87,14 @@ const ai = z.object({
     .max(80)
     .regex(/^[A-Za-z0-9._-]+$/),
   sections: z
-    .array(z.enum(['meetings', 'priorities', 'nextTasks', 'yesterday', 'waiting', 'since']))
-    .max(6),
+    .array(
+      z.enum(['meetings', 'priorities', 'nextTasks', 'yesterday', 'waiting', 'mail', 'lists', 'since'])
+    )
+    .max(8),
   extras: z.array(z.string().trim().min(1).max(MAX_EXTRA_LENGTH)).max(MAX_EXTRAS),
-  sendMail: z.boolean(),
-  sendSlack: z.boolean()
+  mail: aiLevel,
+  lists: aiLevel,
+  slack: aiLevel
 })
 
 export const settingsSchema = z.object({
@@ -175,14 +179,15 @@ export const DEFAULT_SETTINGS: Settings = {
   calendar: { daysAhead: 2, show: 'all' }, // today and tomorrow
   profile: { name: '' },
   briefing: { enabled: true, time: '09:00', fullHeight: false }, // 09:00 = the default work start
-  // Off until a key is added. Mail and Slack contents stay out of what the AI reads unless asked.
+  // Off until a key is added. Of mail, lists and Slack the AI only gets the counts unless asked.
   ai: {
     enabled: false,
     model: 'gemini-3.5-flash-lite',
     sections: [...BRIEFING_SECTIONS],
     extras: [],
-    sendMail: false,
-    sendSlack: false
+    mail: 'counts',
+    lists: 'counts',
+    slack: 'counts'
   },
   onboardingDone: false
 }
@@ -209,6 +214,10 @@ export function applyPatch(base: Settings, patch: SettingsPatch): Settings {
 
 // Settings saved before the widget/panel split had a single `appearance` section.
 export function migrateLegacy(stored: unknown): unknown {
+  return migrateAiSwitches(migrateAppearance(stored))
+}
+
+function migrateAppearance(stored: unknown): unknown {
   if (!stored || typeof stored !== 'object') return stored
   const s = stored as Record<string, unknown>
   const old = s['appearance'] as { scale?: number; opacity?: number } | undefined
@@ -219,5 +228,27 @@ export function migrateLegacy(stored: unknown): unknown {
     ...rest,
     widget: { scale: old.scale, opacity: old.opacity },
     panel: { scale: old.scale }
+  }
+}
+
+// Before, two on/off switches (`sendMail`, `sendSlack`) said what the AI could read; now each source
+// has a level. What a person had allowed stays allowed: mail (and the lists, which were mail) at
+// "titles"; Slack at "people", since it already sent who wrote the message.
+function migrateAiSwitches(stored: unknown): unknown {
+  if (!stored || typeof stored !== 'object') return stored
+  const s = stored as Record<string, unknown>
+  const old = s['ai']
+  if (!old || typeof old !== 'object') return stored
+  const ai = old as Record<string, unknown>
+  if (!('sendMail' in ai) && !('sendSlack' in ai)) return stored
+  const { sendMail, sendSlack, ...rest } = ai
+  return {
+    ...s,
+    ai: {
+      ...rest,
+      mail: rest['mail'] ?? (sendMail === true ? 'titles' : 'counts'),
+      lists: rest['lists'] ?? (sendMail === true ? 'titles' : 'counts'),
+      slack: rest['slack'] ?? (sendSlack === true ? 'people' : 'counts')
+    }
   }
 }

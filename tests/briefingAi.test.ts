@@ -83,10 +83,10 @@ describe('what is sent to the AI', () => {
   })
 
   it('sends mail and Slack only when the user allows each one', () => {
-    const mail = JSON.stringify(buildAiPayload(base, { ...ai, sendMail: true }, now).data)
+    const mail = JSON.stringify(buildAiPayload(base, { ...ai, mail: 'titles' }, now).data)
     expect(mail).toContain('Factura de octubre')
     expect(mail).not.toContain('tienes un minuto')
-    const slack = JSON.stringify(buildAiPayload(base, { ...ai, sendSlack: true }, now).data)
+    const slack = JSON.stringify(buildAiPayload(base, { ...ai, slack: 'titles' }, now).data)
     expect(slack).toContain('tienes un minuto')
   })
 
@@ -110,7 +110,7 @@ describe('what is sent to the AI', () => {
   it('does not send a section the user took off the list', () => {
     const { data, ids } = buildAiPayload(
       base,
-      { ...ai, sections: ['priorities'], sendMail: true, sendSlack: true },
+      { ...ai, sections: ['priorities'], mail: 'titles', slack: 'titles' },
       now
     )
     expect(Object.keys(data).sort()).toEqual(['fecha', 'hora', 'prioridades'])
@@ -134,7 +134,7 @@ describe('who wrote a Slack message', () => {
     JSON.stringify(buildAiPayload(withBoss, settings, now).data)
 
   it('goes with the message, as "de" and how it arrived', () => {
-    const text = sent({ ...ai, sendSlack: true })
+    const text = sent({ ...ai, slack: 'people' })
     expect(text).toContain('"de":"Pablo Calvo"')
     expect(text).toContain('"tipo":"mensaje directo"')
     expect(text).toContain('lucho mañana lo vemos a primera hora')
@@ -149,7 +149,7 @@ describe('who wrote a Slack message', () => {
       dueAt: undefined
     })
     const b = buildBriefing({ signals: [mention], name: 'Luciano', now })
-    const text = JSON.stringify(buildAiPayload(b, { ...ai, sendSlack: true }, now).data)
+    const text = JSON.stringify(buildAiPayload(b, { ...ai, slack: 'people' }, now).data)
     expect(text).toContain('"tipo":"mención en un canal"')
   })
 
@@ -173,14 +173,16 @@ describe('who wrote a Slack message', () => {
       now
     })
     const text = JSON.stringify(
-      buildAiPayload(b, { ...ai, sendMail: true, sendSlack: true }, now).data
+      buildAiPayload(b, { ...ai, sections: ['priorities'], mail: 'people', slack: 'people' }, now)
+        .data
     )
-    expect(text).not.toContain('"de"')
+    expect(text.match(/"de"/g)).toHaveLength(1) // the mail's sender; the Slack message has no author
+    expect(text).toContain('"de":"Ana"') // the name, never the address
     expect(text).not.toContain('a@x.com')
   })
 
   it('still never sends the name of the user', () => {
-    expect(sent({ ...ai, sendSlack: true })).not.toContain('Luciano')
+    expect(sent({ ...ai, slack: 'people' })).not.toContain('Luciano')
   })
 
   it('tells the AI the message was written to the reader, so a nickname in it is not a third person', () => {

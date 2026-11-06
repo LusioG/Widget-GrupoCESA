@@ -9,6 +9,8 @@ import { dayOffset } from '../../shared/calendarWindow'
 import { meetingMove } from '../../shared/meetingMove'
 import { strings } from '../../shared/strings'
 import type {
+  AiLevel,
+  AiNoticeKey,
   Briefing,
   BriefingItem,
   BriefingNarrativeSection,
@@ -26,27 +28,35 @@ const hhmm = (ms: number): string => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-// What the AI may read. Meeting and ClickUp titles go by default; the subject of a mail or the
-// text of a Slack message only when the user turned that on.
-function mayRead(item: BriefingItem, ai: AiSettings): boolean {
-  if (item.source === 'gmail') return ai.sendMail
-  if (item.source === 'slack') return ai.sendSlack
-  return true
+// How much of an item the AI may read. Meeting and ClickUp titles always go; of mail, lists and
+// Slack only what the user allowed: the counts (nothing of the item), its subject or text, or that
+// and who wrote it.
+function levelOf(item: BriefingItem, ai: AiSettings): AiLevel {
+  if (item.source === 'gmail') return item.listName ? ai.lists : ai.mail
+  if (item.source === 'slack') return ai.slack
+  return 'people'
 }
 
-function itemData(item: BriefingItem, now: number): Record<string, unknown> {
+const mayRead = (item: BriefingItem, ai: AiSettings): boolean => levelOf(item, ai) !== 'counts'
+
+// Which switch a hidden item belongs to, so the summary can say what the AI did not see.
+function noticeOf(item: BriefingItem): AiNoticeKey | null {
+  if (item.source === 'gmail') return item.listName ? 'lists' : 'mail'
+  return item.source === 'slack' ? 'slack' : null
+}
+
+function itemData(item: BriefingItem, now: number, ai: AiSettings): Record<string, unknown> {
   return {
     id: item.id,
     origen: strings.sources[item.source],
     titulo: maskForAi(item.title),
-    // Slack: who wrote it and how it reached the user. It goes only with the message itself, so it
-    // is under the same switch ("Mensajes de Slack").
-    ...(item.from
-      ? {
-          de: maskForAi(item.from),
-          tipo: item.kind === 'dm' ? 'mensaje directo' : 'mención en un canal'
-        }
+    ...(item.listName ? { lista: maskForAi(item.listName) } : {}),
+    // Slack: how it reached the user. Who wrote it (a Slack message, a mail) goes only at the top
+    // level. The name of the user is never sent.
+    ...(item.source === 'slack' && (item.kind === 'dm' || item.kind === 'mention')
+      ? { tipo: item.kind === 'dm' ? 'mensaje directo' : 'mención en un canal' }
       : {}),
+    ...(levelOf(item, ai) === 'people' && item.from ? { de: maskForAi(item.from) } : {}),
     ...(item.priority ? { prioridad: strings.panel.priority[item.priority] } : {}),
     ...(item.dueAt !== undefined
       ? { vence: localDate(item.dueAt), diasParaVencer: dayOffset(item.dueAt, now) }
@@ -56,23 +66,27 @@ function itemData(item: BriefingItem, now: number): Record<string, unknown> {
 }
 
 // The data the AI works from, already masked, and the ids it is allowed to point to. A section
-// the user took off the list is not sent at all.
+// the user took off the list is not sent at all. `notices` are the sources it was NOT allowed to
+// read although the summary has something from them.
 export function buildAiPayload(
   b: Briefing,
   ai: AiSettings,
   now: number
-): { data: Record<string, unknown>; ids: Set<string>; hidden: number } {
+): { data: Record<string, unknown>; ids: Set<string>; hidden: number; notices: AiNoticeKey[] } {
   const ids = new Set<string>()
   const hiddenIds = new Set<string>()
+  const notices = new Set<AiNoticeKey>()
   const on = new Set<string>(ai.sections)
   const pick = (items: BriefingItem[]): Record<string, unknown>[] =>
     items.flatMap((item) => {
       if (!mayRead(item, ai)) {
         hiddenIds.add(item.id)
+        const notice = noticeOf(item)
+        if (notice) notices.add(notice)
         return []
       }
       ids.add(item.id)
-      return [itemData(item, now)]
+      return [itemData(item, now, ai)]
     })
 
   const meetings = (): Record<string, unknown>[] =>
@@ -95,19 +109,53 @@ export function buildAiPayload(
       }
     })
 
+  // The latest mails: how many there are, and (if allowed) each one's subject and sender.
+  const mailSection = (): Record<string, unknown> => {
+    const total = b.mailTotal ?? 0
+    if (ai.mail === 'counts') {
+      if (total > 0) notices.add('mail')
+      return { cantidad: total }
+    }
+    return { cantidad: total, ultimos: pick(b.mail ?? []) }
+  }
+
+  // The lists, already grouped: counts for every list, and (if allowed) its name and latest subjects.
+  const listsSection = (): Record<string, unknown> => {
+    const groups = b.lists ?? []
+    const conversations = groups.reduce((sum, g) => sum + g.conversations, 0)
+    const unread = groups.reduce((sum, g) => sum + g.unread, 0)
+    if (ai.lists === 'counts') {
+      if (groups.length > 0) notices.add('lists')
+      return { conversacionesNuevas: conversations, mensajesSinLeer: unread }
+    }
+    return {
+      conversacionesNuevas: conversations,
+      mensajesSinLeer: unread,
+      listas: groups.map((g) => ({
+        lista: maskForAi(g.name),
+        conversaciones: g.conversations,
+        sinLeer: g.unread,
+        urgente: g.urgent,
+        ultimas: pick(g.items)
+      }))
+    }
+  }
+
   const data: Record<string, unknown> = { fecha: localDate(now), hora: hhmm(now) }
   if (on.has('meetings')) data['reuniones'] = meetings()
   if (on.has('priorities')) data['prioridades'] = pick(b.priorities)
   if (on.has('nextTasks')) data['proximasTareas'] = pick(b.nextTasks)
   if (on.has('yesterday')) data['pendienteDeAyer'] = pick(b.yesterday)
   if (on.has('waiting')) data['esperandoRespuesta'] = pick(b.waiting)
+  if (on.has('mail')) data['correos'] = mailSection()
+  if (on.has('lists')) data['listas'] = listsSection()
   if (on.has('since')) {
     data['nuevosDesdeElUltimoResumen'] = {
       correos: b.since.emails,
       mensajesSlack: b.since.messages
     }
   }
-  return { data, ids, hidden: hiddenIds.size }
+  return { data, ids, hidden: hiddenIds.size, notices: [...notices] }
 }
 
 // Fixed tone, what the user wants brought, and the fixed answer format.
@@ -120,7 +168,16 @@ const answerSchema = z.object({
   sections: z
     .array(
       z.object({
-        key: z.enum(['meetings', 'priorities', 'nextTasks', 'yesterday', 'waiting', 'since']),
+        key: z.enum([
+          'meetings',
+          'priorities',
+          'nextTasks',
+          'yesterday',
+          'waiting',
+          'mail',
+          'lists',
+          'since'
+        ]),
         text: z.string().trim().min(1),
         refs: z.array(z.string()).default([])
       })
@@ -180,6 +237,8 @@ function hasContent(b: Briefing, sections: readonly string[]): boolean {
     nextTasks: b.nextTasks.length,
     yesterday: b.yesterday.length,
     waiting: b.waiting.length,
+    mail: b.mailTotal ?? 0,
+    lists: (b.lists ?? []).length,
     since: b.since.emails + b.since.messages
   }
   return orderSections(sections).some((k) => count[k] > 0)
@@ -196,7 +255,7 @@ export type WriteOptions = {
 // answer could not be read. Any other failure is thrown so the caller can fall back.
 export async function writeWithAi(base: Briefing, opts: WriteOptions): Promise<Briefing> {
   if (!hasContent(base, opts.ai.sections)) return base
-  const { data, ids } = buildAiPayload(base, opts.ai, opts.now)
+  const { data, ids, notices } = buildAiPayload(base, opts.ai, opts.now)
   const system = composeSystem(opts.ai)
   const user = `Datos de hoy (JSON):\n${JSON.stringify(data)}`
 
@@ -212,7 +271,7 @@ export async function writeWithAi(base: Briefing, opts: WriteOptions): Promise<B
     })
     try {
       const { intro, narrative } = parseAiAnswer(text, ids, opts.ai.sections)
-      return { ...base, mode: 'ai', intro, narrative }
+      return { ...base, mode: 'ai', intro, narrative, ...(notices.length > 0 ? { notices } : {}) }
     } catch (error) {
       if (!(error instanceof AiAnswerError)) throw error
       lastError = error

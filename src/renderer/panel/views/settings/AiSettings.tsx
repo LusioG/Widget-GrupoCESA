@@ -6,9 +6,9 @@ import {
   SECTION_TOPICS
 } from '@shared/briefingPrompt'
 import { strings } from '@shared/strings'
-import type { BriefingSectionKey } from '@shared/types'
+import type { AiLevel, BriefingSectionKey, Settings } from '@shared/types'
 import { XIcon } from '@renderer/components/icons'
-import { Button, Card, TextField, Toggle } from '@renderer/components/ui'
+import { Button, Card, Segment, TextField, Toggle } from '@renderer/components/ui'
 import { useAppStore } from '@renderer/store/useAppStore'
 
 const s = strings.settings.briefing.ai
@@ -29,6 +29,43 @@ function Row({
         <div className="text-xs text-cesa-mute">{hint}</div>
       </div>
       {children}
+    </div>
+  )
+}
+
+// How much of one source the AI may read: only the counts, the subject / text, or that and who
+// wrote it. The whole row is one control, so the three options read side by side.
+function LevelRow({
+  field,
+  title,
+  hint,
+  labels
+}: {
+  field: 'mail' | 'lists' | 'slack'
+  title: string
+  hint: string
+  labels: { titles: string; people: string }
+}): React.JSX.Element {
+  const level = useAppStore((st) => st.state?.settings.ai[field] ?? 'counts')
+  const options: { value: AiLevel; label: string }[] = [
+    { value: 'counts', label: s.levelCounts },
+    { value: 'titles', label: labels.titles },
+    { value: 'people', label: labels.people }
+  ]
+  return (
+    <div className="space-y-1.5">
+      <div>
+        <div className="text-sm text-cesa-ink">{title}</div>
+        <div className="text-xs text-cesa-mute">{hint}</div>
+      </div>
+      <Segment
+        label={title}
+        value={level}
+        options={options}
+        onChange={(value) =>
+          void window.api.settings.update({ ai: { [field]: value } as Partial<Settings['ai']> })
+        }
+      />
     </div>
   )
 }
@@ -317,20 +354,24 @@ export function AiSettings(): React.JSX.Element {
               <div className="text-sm text-cesa-ink">{s.reads}</div>
               <div className="text-xs text-cesa-mute">{s.readsDefault}</div>
             </div>
-            <Row title={s.sendMail} hint={s.sendMailHint}>
-              <Toggle
-                checked={ai.sendMail}
-                label={s.sendMail}
-                onChange={(sendMail) => window.api.settings.update({ ai: { sendMail } })}
-              />
-            </Row>
-            <Row title={s.sendSlack} hint={s.sendSlackHint}>
-              <Toggle
-                checked={ai.sendSlack}
-                label={s.sendSlack}
-                onChange={(sendSlack) => window.api.settings.update({ ai: { sendSlack } })}
-              />
-            </Row>
+            <LevelRow
+              field="mail"
+              title={s.levelMail}
+              hint={s.levelMailHint}
+              labels={s.levelsMail}
+            />
+            <LevelRow
+              field="lists"
+              title={s.levelLists}
+              hint={s.levelListsHint}
+              labels={s.levelsMail}
+            />
+            <LevelRow
+              field="slack"
+              title={s.levelSlack}
+              hint={s.levelSlackHint}
+              labels={s.levelsSlack}
+            />
             <p className="text-xs text-cesa-mute">{s.masked}</p>
           </Card>
         </>

@@ -1,6 +1,7 @@
 import { URGENT_THRESHOLD } from '../../shared/badgeState'
+import { senderNames } from '../../shared/personName'
 import { strings } from '../../shared/strings'
-import type { Briefing, BriefingItem, Signal } from '../../shared/types'
+import type { Briefing, BriefingItem, BriefingList, Signal } from '../../shared/types'
 
 const HOUR = 60 * 60 * 1000
 const DAY = 24 * HOUR
@@ -9,6 +10,9 @@ export const MAX_PRIORITIES = 5
 export const MAX_NEXT_TASKS = 3
 const MAX_YESTERDAY = 5
 const MAX_WAITING = 5
+export const MAX_MAIL = 3
+const MAX_LISTS = 5 // lists shown, the busiest first
+const MAX_LIST_ITEMS = 3 // conversations shown for each list
 const MAX_SINCE = 3 * DAY // after a long absence "since the last summary" stops at three days
 
 const pad = (n: number): string => String(n).padStart(2, '0')
@@ -44,9 +48,49 @@ function toItem(s: Signal): BriefingItem {
   if (s.meetingUrl) item.meetingUrl = s.meetingUrl
   if (s.dueAt !== undefined) item.dueAt = s.dueAt
   if (s.priority) item.priority = s.priority
-  // Who wrote a Slack message (not a follow-up, whose "sender" is someone else's reply to you).
-  if (s.source === 'slack' && s.kind !== 'followup' && s.sender) item.from = s.sender
+  // Who wrote it: a Slack message's author (not a follow-up's), or the names in a mail's sender.
+  const from =
+    s.source === 'slack'
+      ? s.kind !== 'followup'
+        ? s.sender
+        : undefined
+      : s.source === 'gmail' && s.kind === 'email'
+        ? senderNames(s.sender)
+        : undefined
+  if (from) item.from = from
+  if (s.list) item.listName = s.list.name
   return item
+}
+
+const newestFirst = (a: Signal, b: Signal): number => b.occurredAt - a.occurredAt
+
+// What is new in each distribution list, grouped here (not by the AI): the busiest lists first, the
+// ones with something urgent before them.
+function groupLists(conversations: Signal[]): BriefingList[] {
+  const byList = new Map<string, Signal[]>()
+  for (const s of conversations) {
+    if (!s.list) continue
+    byList.set(s.list.address, [...(byList.get(s.list.address) ?? []), s])
+  }
+  return [...byList.values()]
+    .map((group): BriefingList => {
+      const sorted = [...group].sort(newestFirst)
+      return {
+        address: sorted[0].list!.address,
+        name: sorted[0].list!.name,
+        conversations: group.length,
+        unread: group.reduce((sum, s) => sum + (s.unread ?? 1), 0),
+        urgent: group.some((s) => (s.urgency ?? 0) >= URGENT_THRESHOLD),
+        items: sorted.slice(0, MAX_LIST_ITEMS).map(toItem)
+      }
+    })
+    .sort(
+      (a, b) =>
+        Number(b.urgent) - Number(a.urgent) ||
+        b.conversations - a.conversations ||
+        a.name.localeCompare(b.name)
+    )
+    .slice(0, MAX_LISTS)
 }
 
 // Most urgent first; between equals, the one that falls due first (no date goes last).
@@ -115,6 +159,13 @@ export function buildBriefing(input: BriefingInput): Briefing {
     .sort((a, b) => a.occurredAt - b.occurredAt)
     .slice(0, MAX_WAITING)
 
+  // The latest individual mails still unread, and what is new in the lists (conversations that were
+  // opened do not count, like in the panel).
+  const unreadMail = pending
+    .filter((s) => s.kind === 'email' && !s.list && !s.seen)
+    .sort(newestFirst)
+  const lists = groupLists(pending.filter((s) => !!s.list && !s.seen))
+
   const sinceAt = Math.max(input.previousAt ?? now - DAY, now - MAX_SINCE)
   const fresh = pending.filter((s) => s.occurredAt > sinceAt && !s.seen)
 
@@ -134,6 +185,9 @@ export function buildBriefing(input: BriefingInput): Briefing {
     nextTasks: nextTasks.map(toItem),
     yesterday: yesterday.map(toItem),
     waiting: waiting.map(toItem),
+    mail: unreadMail.slice(0, MAX_MAIL).map(toItem),
+    mailTotal: unreadMail.length,
+    lists,
     since: {
       emails: fresh.filter((s) => s.kind === 'email').length,
       messages: fresh.filter((s) => s.kind === 'mention' || s.kind === 'dm').length

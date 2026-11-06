@@ -56,19 +56,20 @@ Las listas se reemplazan completas (no se combinan).
 | `briefing.enabled`, `briefing.time`, `briefing.fullHeight` | true/false, `"HH:MM"`, true/false | Resumen diario |
 | `ai.enabled` | true/false | Resumen escrito con IA (necesita la clave de Gemini, que NO va aquí) |
 | `ai.model` | texto | Modelo de Gemini |
-| `ai.sections` | lista con `"meetings"`, `"priorities"`, `"nextTasks"`, `"yesterday"`, `"waiting"`, `"since"` | Qué secciones lleva el resumen; lo que se quita no se envía a la IA |
+| `ai.sections` | lista con `"meetings"`, `"priorities"`, `"nextTasks"`, `"yesterday"`, `"waiting"`, `"mail"`, `"lists"`, `"since"` | Qué secciones lleva el resumen (`mail`: últimos correos; `lists`: listas de distribución); lo que se quita no se envía a la IA |
 | `ai.extras` | hasta 10 textos de 120 caracteres | Pedidos de enfoque para la IA (ver abajo) |
-| `ai.sendMail` | true/false | Deja que la IA lea el asunto de los correos, también de las listas de distribución |
-| `ai.sendSlack` | true/false | Deja que la IA lea los mensajes de Slack y quién los escribió |
+| `ai.mail` | `"counts"`, `"titles"` o `"people"` (por defecto `"counts"`) | Qué lee la IA de tus correos: solo cuántos hay, el asunto, o el asunto y quién lo mandó. Nunca el cuerpo |
+| `ai.lists` | `"counts"`, `"titles"` o `"people"` (por defecto `"counts"`) | Lo mismo para las listas de distribución: cantidades, nombre de la lista y asuntos, o además quién escribió |
+| `ai.slack` | `"counts"`, `"titles"` o `"people"` (por defecto `"counts"`) | Lo mismo para Slack: cantidades, el texto de las menciones y mensajes directos, o además quién los escribió |
 | `onboardingDone` | true/false | Si ya se mostró la bienvenida |
 
 ## Sobre `ai.extras`
 
-Un extra pide un enfoque, no trae datos nuevos: la IA solo habla de lo que le llega de las secciones
-activas de `ai.sections` (y de lo que permitan `ai.sendMail` y `ai.sendSlack`). Los correos y los
-mensajes llegan únicamente dentro de las prioridades, lo pendiente de ayer y lo que espera
-respuesta: si se quitan esas secciones, el resumen se queda sin correos ni listas. Pedir
-"resumen de las listas" o "últimos 3 correos" no funciona hoy, porque no hay una sección para eso.
+Un extra solo cambia cómo se cuenta (un enfoque o un estilo): no trae datos nuevos. La IA habla de lo
+que le llega de las secciones activas de `ai.sections`, y de cada fuente solo lo que permitan
+`ai.mail`, `ai.lists` y `ai.slack`. Para que el resumen hable de los últimos correos o de las listas hay
+que dejar las secciones `"mail"` y `"lists"` en `ai.sections`, y subir su nivel de `"counts"` a
+`"titles"` si se quieren los asuntos. Los extras no sirven para pedir esos datos.
 
 ## Lo que NO se puede configurar por archivo
 

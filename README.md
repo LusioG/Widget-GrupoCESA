@@ -82,11 +82,14 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
   vez al día la primera vez que usas el equipo en tu horario laboral, a partir de la hora que elijas
   (Ajustes → Resumen diario). Te saluda por tu nombre ("Buen día, Ana") y reúne tus reuniones de
   hoy, las 5 prioridades principales, las próximas 3 tareas normales, lo pendiente de ayer, lo que
-  espera respuesta y lo nuevo desde el último resumen. Con IA (tu clave de Gemini) lo redacta en
+  espera respuesta, los últimos 3 correos sin leer, lo nuevo en cada lista de distribución (cuántas
+  conversaciones y mensajes sin leer, agrupado por lista) y lo nuevo desde el último resumen. Con IA (tu clave de Gemini) lo redacta en
   prosa y deja enlaces pequeños a cada tarea, correo o reunión; la lista completa queda en "Ver
   todo el detalle". Sin IA, o si falla, sale la lista. Se guarda cada día y se puede volver a verlo
   desde el icono de hoja del panel, la bandeja ("Ver resumen del día") o Ajustes (últimos 7 días).
-  Las instrucciones para la IA se pueden personalizar en Ajustes.
+  En Ajustes eliges qué secciones lleva; lo que quitas no se envía. Los pedidos propios solo
+  cambian el estilo (no agregan datos). Si la IA no pudo leer una fuente (por ejemplo, tus correos
+  están en "solo cantidades"), el resumen lo avisa y dice dónde cambiarlo.
 - Tamaño del widget, tamaño del panel y transparencia del widget ajustables.
 
 ## Instalación y actualizaciones
@@ -224,7 +227,9 @@ canales que quieres ignorar.
 - **La IA es opcional y viene apagada.** Solo se usa para redactar el resumen diario, y solo si
   tú pegas tu propia clave de Gemini y la activas. Por defecto lo único que se envía son los
   títulos y horas de tus reuniones y los títulos, prioridad y vencimiento de tus tareas de ClickUp.
-  De Gmail y Slack solo van cantidades, a menos que actives cada fuente. Antes de enviar se ocultan
+  De correos, listas de distribución y Slack solo van cantidades, a menos que subas el nivel de cada
+  fuente (solo cantidades, asuntos o texto, o además quién escribió; nunca el cuerpo de los correos
+  ni los mensajes del chat de las listas). Antes de enviar se ocultan
   claves, correos, tarjetas y documentos, y **Ajustes → Resumen diario** guarda las últimas 30
   consultas tal como salieron, para que las revises o las borres. Con la cuenta gratuita de Google,
   lo enviado puede usarse para mejorar sus productos y ser leído por personas de Google; con una

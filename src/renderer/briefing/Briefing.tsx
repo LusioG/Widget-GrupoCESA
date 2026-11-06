@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { dueLabel } from '@shared/dueLabel'
 import { meetingMove, moveLabel } from '@shared/meetingMove'
 import { strings } from '@shared/strings'
-import type { Briefing as BriefingData, BriefingItem } from '@shared/types'
+import type { Briefing as BriefingData, BriefingItem, BriefingList } from '@shared/types'
 import logo from '@renderer/assets/logo-circle.png'
 import { DotsArc, DotsDivider } from '@renderer/components/DotsArc'
 import {
@@ -143,6 +143,46 @@ function Section({
   )
 }
 
+// Each distribution list with what is new in it: how many conversations and unread messages, and
+// the latest ones.
+function ListsSection({
+  lists,
+  now
+}: {
+  lists: BriefingList[]
+  now: number
+}): React.JSX.Element | null {
+  if (lists.length === 0) return null
+  return (
+    <section>
+      <SectionTitle>{s.lists}</SectionTitle>
+      <div className="space-y-3">
+        {lists.map((list) => (
+          <div key={list.address}>
+            <p className="mb-1.5 flex items-center gap-2 text-sm text-cesa-ink">
+              <span className="font-semibold">{list.name}</span>
+              <span className="text-xs text-cesa-mute">
+                {s.listCounts(list.conversations, list.unread)}
+              </span>
+              {list.urgent && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-cesa-alert/50 px-1.5 py-0.5 text-xs font-semibold text-cesa-alert-text">
+                  <AlertIcon className="size-3" />
+                  {s.urgent}
+                </span>
+              )}
+            </p>
+            <ul className="space-y-2">
+              {list.items.map((item) => (
+                <Row key={item.id} item={item} now={now} />
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // The lists: all the meetings and items, one row each. It is the whole summary when the AI did
 // not write it, and the detail behind the text when it did.
 function Detail({ briefing, now }: { briefing: BriefingData; now: number }): React.JSX.Element {
@@ -163,6 +203,8 @@ function Detail({ briefing, now }: { briefing: BriefingData; now: number }): Rea
       <Section title={s.nextTasks} items={briefing.nextTasks} now={now} />
       <Section title={s.yesterday} items={briefing.yesterday} now={now} />
       <Section title={s.waiting} items={briefing.waiting} now={now} />
+      <Section title={s.mail} items={briefing.mail ?? []} now={now} />
+      <ListsSection lists={briefing.lists ?? []} now={now} />
       {since && (
         <section>
           <SectionTitle>{s.since}</SectionTitle>
@@ -218,7 +260,9 @@ function Narrative({ briefing }: { briefing: BriefingData }): React.JSX.Element 
     briefing.priorities,
     briefing.nextTasks,
     briefing.yesterday,
-    briefing.waiting
+    briefing.waiting,
+    briefing.mail ?? [],
+    ...(briefing.lists ?? []).map((l) => l.items)
   ]) {
     for (const item of list) byId.set(item.id, item)
   }
@@ -228,6 +272,8 @@ function Narrative({ briefing }: { briefing: BriefingData }): React.JSX.Element 
     nextTasks: s.nextTasks,
     yesterday: s.yesterday,
     waiting: s.waiting,
+    mail: s.mail,
+    lists: s.lists,
     since: s.since
   }
 
@@ -323,7 +369,9 @@ export function Briefing(): React.JSX.Element {
       briefing.priorities.length +
       briefing.nextTasks.length +
       briefing.yesterday.length +
-      briefing.waiting.length ===
+      briefing.waiting.length +
+      (briefing.mail ?? []).length +
+      (briefing.lists ?? []).length ===
       0
 
   return (
@@ -378,6 +426,17 @@ export function Briefing(): React.JSX.Element {
             {briefing && written && (
               <>
                 <Narrative briefing={briefing} />
+                {(briefing.notices ?? []).length > 0 && (
+                  <div
+                    role="note"
+                    className="space-y-1 rounded-xl border border-cesa-meeting/40 bg-cesa-meeting/10 px-3 py-2.5 text-xs text-cesa-ink"
+                  >
+                    {(briefing.notices ?? []).map((key) => (
+                      <p key={key}>{s.notices[key]}</p>
+                    ))}
+                    <p className="text-cesa-mute">{s.notices.change}</p>
+                  </div>
+                )}
                 {!empty && (
                   <div>
                     <button

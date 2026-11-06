@@ -10,6 +10,8 @@ export const BRIEFING_SECTIONS: BriefingSectionKey[] = [
   'nextTasks',
   'yesterday',
   'waiting',
+  'mail',
+  'lists',
   'since'
 ]
 
@@ -20,6 +22,8 @@ export const SECTION_TOPICS: Record<BriefingSectionKey, string> = {
   nextTasks: 'Las próximas 3 tareas normales que vencen, aparte de las prioridades',
   yesterday: 'Lo que quedó pendiente de ayer',
   waiting: 'Lo que está esperando respuesta',
+  mail: 'Los últimos 3 correos sin leer',
+  lists: 'Lo nuevo en tus listas de distribución',
   since: 'Lo nuevo desde el último resumen'
 }
 
@@ -36,11 +40,15 @@ const CLOSING = `Si algo no tiene datos, no lo menciones. No inventes fechas, no
 
 Cada elemento es independiente: no mezcles ni traslades nombres de personas de un elemento a otro. Si un nombre no aparece en el título ni en el campo "de" de ese elemento, no lo menciones.
 
-Un elemento con "de" es un mensaje de Slack que esa persona le escribió a quien lee el resumen ("tipo" dice si fue directo o en un canal). Preséntalo así ("Marta te escribió que…", "te pidió…"). Dentro del mensaje, un nombre o apodo puede ser el de quien lee, hablándole a él: no lo conviertas en un tercero ni digas que hay que "ver el tema con" esa persona. Si el mensaje no permite saberlo, di solo quién escribió y de qué trata.
+Un elemento de Slack con "de" es un mensaje que esa persona le escribió a quien lee el resumen ("tipo" dice si fue directo o en un canal). Preséntalo así ("Marta te escribió que…", "te pidió…"). Dentro del mensaje, un nombre o apodo puede ser el de quien lee, hablándole a él: no lo conviertas en un tercero ni digas que hay que "ver el tema con" esa persona. Si el mensaje no permite saberlo, di solo quién escribió y de qué trata.
 
 Si una reunión tiene "cambioDeHorario" (adelantada o atrasada), dilo con claridad y di la hora que tenía antes: es lo que más fácil se pasa por alto.
 
-Si un correo es solo la invitación a una reunión que ya mencionaste, es parte de esa reunión: no lo cuentes como una prioridad aparte.`
+Si un correo es solo la invitación a una reunión que ya mencionaste, es parte de esa reunión: no lo cuentes como una prioridad aparte.
+
+Un mismo elemento puede aparecer en dos secciones (un correo entre las prioridades y entre los últimos correos): cuéntalo una sola vez, donde más importa.
+
+"correos" y "listas" traen, según lo que la persona permitió, solo la "cantidad" (sin asuntos) o los asuntos ("titulo") y a veces quién escribió ("de"). Si solo hay cantidades, di cuántos hay y no inventes de qué tratan. Las "listas" son listas de distribución del equipo: dilo por su nombre ("lista"), por ejemplo "en Soporte hay 3 conversaciones nuevas".`
 
 // One line of free text: no line breaks, so an extra cannot pose as a new instruction block.
 const oneLine = (text: string): string => text.replace(/\s+/g, ' ').trim()

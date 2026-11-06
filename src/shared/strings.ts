@@ -403,15 +403,20 @@ export const strings = {
           'Gemini cambia sus modelos seguido. Si deja de funcionar, cambia el nombre por uno vigente en ai.google.dev/gemini-api/docs/models.',
         reads: 'Qué puede leer la IA',
         readsDefault:
-          'Siempre: títulos y horas de tus reuniones, y títulos, prioridad y vencimiento de tus tareas de ClickUp. De los correos y Slack solo las cantidades.',
-        sendMail: 'Asuntos y remitentes de Gmail',
-        sendMailHint: 'Deja que la IA los lea para hablar de tus correos.',
-        sendSlack: 'Mensajes de Slack',
-        sendSlackHint: 'Deja que la IA lea tus menciones y mensajes directos, y vea quién los escribió.',
+          'Siempre: títulos y horas de tus reuniones, y títulos, prioridad y vencimiento de tus tareas de ClickUp. De los correos, las listas y Slack, solo las cantidades, salvo que elijas más aquí.',
+        levelMail: 'Correos',
+        levelMailHint: 'Se envía el asunto, nunca el cuerpo del correo.',
+        levelLists: 'Listas de distribución',
+        levelListsHint: 'Se envía el nombre de la lista y los asuntos, nunca los mensajes del chat.',
+        levelSlack: 'Slack',
+        levelSlackHint: 'Se envía el texto de tus menciones y mensajes directos.',
+        levelCounts: 'Solo cantidades',
+        levelsMail: { titles: 'Asuntos', people: 'Asuntos y quién' },
+        levelsSlack: { titles: 'Mensajes', people: 'Mensajes y quién' },
         masked: 'Antes de enviar se ocultan claves, correos, tarjetas y documentos.',
         topicsTitle: 'Qué quieres que traiga',
         topicsHint:
-          'El tono y el formato son fijos. Aquí eliges qué incluye el resumen: quita lo que no quieras con la ✕, o añade algo tuyo. Lo que quitas no se envía a la IA.',
+          'El tono y el formato son fijos. Aquí eliges qué incluye el resumen: quita lo que no quieras con la ✕. Lo que quitas no se envía a la IA. Lo que sí traiga depende de lo que le dejes leer más abajo.',
         topicsPlaceholder: 'Algo más que quieras que traiga',
         topicsAdd: 'Añadir',
         topicsRemove: 'Quitar',
@@ -419,7 +424,7 @@ export const strings = {
         topicsRemoved: 'Quitados',
         topicsExtras: 'Añadidos por ti',
         topicsExtrasHint:
-          'La IA solo puede hablar de lo que ya tiene (reuniones, tareas, correos y mensajes). Sirve para pedirle un enfoque, por ejemplo "destaca lo que vence esta semana".',
+          'Esto solo cambia cómo se cuenta (un enfoque o un estilo, por ejemplo "destaca lo que vence esta semana"). No agrega datos: para que hable de correos o listas, deja esas secciones puestas.',
         topicsReset: 'Volver a los de siempre',
         errors: {
           auth: 'Google no aceptó esa clave. Revisa que la hayas copiado completa.',
@@ -562,6 +567,17 @@ export const strings = {
     nextTasks: 'Próximas tareas',
     yesterday: 'Quedó pendiente de ayer',
     waiting: 'Esperando respuesta',
+    mail: 'Últimos correos',
+    lists: 'Listas de distribución',
+    listCounts: (conversations: number, unread: number): string =>
+      `${conversations === 1 ? '1 conversación' : `${conversations} conversaciones`} · ${unread === 1 ? '1 sin leer' : `${unread} sin leer`}`,
+    // Under a summary written by the AI: a source it was not allowed to read, and where to change it.
+    notices: {
+      mail: 'La IA no vio los asuntos de tus correos, solo cuántos hay.',
+      lists: 'La IA no vio los asuntos de tus listas de distribución, solo cuántas conversaciones hay.',
+      slack: 'La IA no leyó tus mensajes de Slack, solo cuántos hay.',
+      change: 'Puedes permitírselo en Ajustes → Resumen diario → Qué puede leer la IA.'
+    },
     since: 'Desde el último resumen',
     sinceText: (emails: number, messages: number): string => {
       const parts: string[] = []
