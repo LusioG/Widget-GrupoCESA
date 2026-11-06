@@ -6,6 +6,7 @@ import { signInWithSlack } from '../../auth/slackSignIn'
 import { identityLabel } from '../../../shared/accountLabel'
 import { getSettings } from '../../settingsStore'
 import { AuthError, type Connector, type ConnectorContext } from '../types'
+import { groupConversations, parseMessageId, splitConversation, tsToMs } from './conversations'
 import {
   classifyMessage,
   type ConversationKind,
@@ -70,6 +71,10 @@ export class SlackConnector implements Connector {
 
   private readonly buffer = new Map<string, Signal>()
   private dm: DmState = emptyDmState()
+  private ctx?: ConnectorContext
+  // Messages the person opened before the state was loaded: applied as soon as it is.
+  private pendingSeen: string[] = []
+  private seenSource: () => string[] = () => []
   private readonly users = new Map<string, { name: string; isBot: boolean }>()
   private readonly channels = new Map<
     string,
@@ -182,6 +187,7 @@ export class SlackConnector implements Connector {
     this.users.clear()
     this.channels.clear()
     this.dm = emptyDmState()
+    this.pendingSeen = []
   }
 
   async disconnect(): Promise<void> {
@@ -210,10 +216,45 @@ export class SlackConnector implements Connector {
       this.since = Date.now()
       await this.saveCursor(ctx)
     }
+    // The local copy keeps conversations; the connector works with their separate messages.
     for (const s of await ctx.loadCached()) {
-      if (s.kind === 'mention' || s.kind === 'dm') this.buffer.set(s.id, s)
+      if (s.kind === 'mention' || s.kind === 'dm') {
+        for (const message of splitConversation(s)) this.buffer.set(message.id, message)
+      }
     }
     this.loaded = true
+    // What was opened before conversations existed, and what was opened while this loaded.
+    this.applySeen([...this.seenSource(), ...this.pendingSeen])
+    this.pendingSeen = []
+  }
+
+  // Where to ask which messages the person already opened (the ids the panel marks as seen).
+  setSeenSource(source: () => string[]): void {
+    this.seenSource = source
+  }
+
+  private applySeen(ids: string[]): boolean {
+    let changed = false
+    for (const id of ids) {
+      const parsed = parseMessageId(id)
+      if (!parsed) continue
+      const at = tsToMs(parsed.ts)
+      if (at > (this.dm.seenUpTo[parsed.channel] ?? 0)) {
+        this.dm.seenUpTo[parsed.channel] = at
+        changed = true
+      }
+    }
+    return changed
+  }
+
+  // The person opened, dismissed or snoozed these: everything of their conversations up to there
+  // is read, so only what arrives later counts as new.
+  markRead(ids: string[]): void {
+    if (!this.loaded) {
+      this.pendingSeen.push(...ids)
+      return
+    }
+    if (this.applySeen(ids) && this.ctx) void this.saveCursor(this.ctx).catch(() => undefined)
   }
 
   private saveCursor(ctx: ConnectorContext): Promise<void> {
@@ -221,6 +262,7 @@ export class SlackConnector implements Connector {
   }
 
   async sync(ctx: ConnectorContext): Promise<Signal[]> {
+    this.ctx = ctx
     const renewed = await this.ensureFresh()
     if (!this.loaded) await this.load(ctx)
     else if (renewed) this.web = await this.newWebClient()
@@ -355,7 +397,10 @@ export class SlackConnector implements Connector {
       .slice(0, KEEP_MAX)
     this.buffer.clear()
     recent.forEach((s) => this.buffer.set(s.id, s))
-    return [...recent, ...slackFollowups(this.dm, now, getSettings().followups.waitHours)]
+    return [
+      ...groupConversations(recent, this.dm.seenUpTo),
+      ...slackFollowups(this.dm, now, getSettings().followups.waitHours)
+    ]
   }
 
   // The people of the workspace, to choose whose messages to ignore or mark urgent. Each is named the

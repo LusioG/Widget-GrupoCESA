@@ -45,6 +45,13 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
   Cada lista puede marcarse **urgente**, y valen tus remitentes prioritarios y a ignorar. Requiere el
   permiso de **solo lectura** de Gmail: quien ya tenía Gmail conectado debe tocar **Volver a conectar**
   una vez. Los enlaces abren la cuenta de Gmail que lee el widget, no la primera del navegador.
+- **Mensajes directos de Slack, una tarjeta por conversación:** varios mensajes seguidos de la misma
+  persona son UNA tarjeta, con el último mensaje y un número verde con los nuevos (con uno solo, el
+  "!" de siempre). Se despliega ("Ver N mensajes") para leer los últimos 4, y una línea final dice
+  "Hay N mensajes más". Al tocar la tarjeta se abre Slack y **toda la conversación queda leída**; si
+  llega algo después, vuelve a aparecer solo con lo nuevo. Descartar o posponer también vale para toda
+  la conversación. Los contadores del widget cuentan conversaciones, no mensajes. Las menciones en
+  canales siguen siendo una tarjeta cada una.
 - **Acciones por elemento:** abrir el original, posponer (1 h / mañana / lunes), descartar, y en lote.
   Tras descartar o posponer aparece **Deshacer** unos segundos. Lo pospuesto queda en una lista
   **"Pospuestos"** al final del panel, con cuándo vuelve y un botón _Traer ahora_.

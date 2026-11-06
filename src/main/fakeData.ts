@@ -4,6 +4,37 @@ import { cleanMessageText } from './connectors/gmail/body'
 const MIN = 60_000
 const HOUR = 60 * MIN
 
+// Seven direct messages from the same person as one conversation (the newest first), the way the
+// connector gives them: the card is the latest message and `unread` says how many are new.
+function pabloConversation(now: number): Signal {
+  const texts = [
+    'Lucho, mañana lo vemos a primera hora',
+    'ahí te paso un resumen de lo que hice',
+    'usa test',
+    '¿me validás en test los 10 puntos que implementamos ayer en el CRM?',
+    '¿te están llegando los correos de desarrollo?',
+    'acabo de ver la respuesta de Dani',
+    'Lucho buen día!!!'
+  ]
+  const messages = texts.map((text, i) => {
+    const at = now - (i + 1) * 4 * MIN
+    return { ts: `${Math.floor(at / 1000)}.000100`, at, text, sender: 'Pablo Calvo' }
+  })
+  return {
+    id: `slack:DPABLO:${messages[0].ts}`,
+    source: 'slack',
+    kind: 'dm',
+    title: texts[0],
+    body: 'Mensaje directo',
+    url: 'https://slack.com',
+    occurredAt: messages[0].at,
+    sender: 'Pablo Calvo',
+    urgency: 0.5,
+    unread: texts.length,
+    messages
+  }
+}
+
 // Phase 1 only: fake signals relative to "now" so meetings always look upcoming.
 export function buildFakeSignals(now: number): Signal[] {
   return [
@@ -63,6 +94,8 @@ export function buildFakeSignals(now: number): Signal[] {
       sender: 'Luis Gómez',
       urgency: 0.5
     },
+    // A conversation of Slack: one card with its messages folded behind it (made-up texts).
+    pabloConversation(now),
     {
       id: 'gmail:fake-1',
       source: 'gmail',
@@ -242,7 +275,8 @@ export function buildFakeThread(threadId: string, now: number): ThreadView | nul
           ...cleanMessageText(RAW_CUT_REPLY),
           replyTo: {
             name: 'Guido Lapiy',
-            snippet: 'Buenas, voy a hacer unas pequeñas pruebas de migracion de zoho desk a zammad, sobretodo…'
+            snippet:
+              'Buenas, voy a hacer unas pequeñas pruebas de migracion de zoho desk a zammad, sobretodo…'
           },
           mine: false,
           unread: false
@@ -262,7 +296,10 @@ export function buildFakeThread(threadId: string, now: number): ThreadView | nul
           text: 'Lo estoy mirando. Parece un problema con la base de datos.',
           mine: false,
           unread: false,
-          replyTo: { name: ANA.name, snippet: 'Desde las 9:00 no podemos facturar, ¿alguien puede revisar…' }
+          replyTo: {
+            name: ANA.name,
+            snippet: 'Desde las 9:00 no podemos facturar, ¿alguien puede revisar…'
+          }
         },
         {
           id: 'm3',
@@ -271,7 +308,10 @@ export function buildFakeThread(threadId: string, now: number): ThreadView | nul
           text: 'Yo reinicio el servicio y les aviso.',
           mine: true,
           unread: false,
-          replyTo: { name: LUIS.name, snippet: 'Lo estoy mirando. Parece un problema con la base de datos.' }
+          replyTo: {
+            name: LUIS.name,
+            snippet: 'Lo estoy mirando. Parece un problema con la base de datos.'
+          }
         },
         {
           id: 'm4',
@@ -289,7 +329,10 @@ export function buildFakeThread(threadId: string, now: number): ThreadView | nul
           text: 'Confirmado: se llenó el disco del servidor. Libero espacio ahora y les cuento.',
           mine: false,
           unread: true,
-          replyTo: { name: ANA.name, snippet: 'Volvió a pasar esta mañana, y ahora también falla el módulo…' }
+          replyTo: {
+            name: ANA.name,
+            snippet: 'Volvió a pasar esta mañana, y ahora también falla el módulo…'
+          }
         }
       ]
     }

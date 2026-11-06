@@ -2,7 +2,15 @@ import { useState } from 'react'
 import { strings } from '@shared/strings'
 import type { Signal, SnoozeOption } from '@shared/types'
 import { dueLabel } from '@shared/dueLabel'
-import { AlertIcon, ClockIcon, UserIcon, UsersIcon, XIcon } from '@renderer/components/icons'
+import {
+  AlertIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  UserIcon,
+  UsersIcon,
+  XIcon
+} from '@renderer/components/icons'
 import { PriorityFlag, SourceTag } from '@renderer/components/SourceBadge'
 
 type Props = {
@@ -16,6 +24,9 @@ type Props = {
 }
 
 const SNOOZE_OPTIONS: SnoozeOption[] = ['hour', 'tomorrow', 'monday', 'forever']
+
+// An unfolded conversation lists this many messages; the rest are "Hay N mensajes más".
+export const SHOWN_MESSAGES = 4
 
 function subtitle(item: Signal, now: number): string | undefined {
   if (item.kind === 'followup') return strings.panel.ago(now - item.occurredAt)
@@ -37,6 +48,7 @@ export function ItemCard({
   onActed
 }: Props): React.JSX.Element {
   const [snoozing, setSnoozing] = useState(false)
+  const [unfolded, setUnfolded] = useState(false)
   const urgent = (item.urgency ?? 0) >= 0.8
   const sub = subtitle(item, now)
 
@@ -44,20 +56,30 @@ export function ItemCard({
   // the original in the browser.
   const open = (): void => {
     if (item.threadId) {
-      void window.api.threads.open({ threadId: item.threadId, signalId: item.id, title: item.title })
+      void window.api.threads.open({
+        threadId: item.threadId,
+        signalId: item.id,
+        title: item.title
+      })
       return
     }
     window.api.openExternal(item.url)
     window.api.items.act({ ids: [item.id], action: 'seen' })
   }
-  const unread = item.threadId && !item.seen ? (item.unread ?? 0) : 0
-  // A direct message, a mention or an email is one message: it gets the green dot with "!" until it
-  // is opened. A conversation of a list has its count of unread messages instead.
+  // Direct messages of Slack arrive as one card per conversation, with its latest messages.
+  const messages = item.source === 'slack' && item.kind === 'dm' ? (item.messages ?? []) : []
+  const conversation = messages.length > 0
+  const newInConversation = conversation && !item.seen ? (item.unread ?? 1) : 0
+  const unread =
+    item.threadId && !item.seen ? (item.unread ?? 0) : newInConversation > 1 ? newInConversation : 0
+  // A message (a direct one, a mention, a mail) is one: it gets the green dot with "!" until it is
+  // opened. A conversation of a list, or of Slack with several new messages, has their count instead.
   const isOneMessage =
-    item.kind === 'dm' ||
-    item.kind === 'mention' ||
-    (item.kind === 'email' && !item.threadId)
-  const newDirect = isOneMessage && !item.seen
+    item.kind === 'dm' || item.kind === 'mention' || (item.kind === 'email' && !item.threadId)
+  const newDirect = isOneMessage && !item.seen && newInConversation <= 1
+  const foldable = conversation && messages.length > 1 && !selecting
+  const shown = messages.slice(0, SHOWN_MESSAGES)
+  const hidden = messages.length - shown.length
   // Who wrote it, for the messages of Slack (an email says it in its text).
   const author = item.source === 'slack' && item.kind !== 'followup' ? item.sender : undefined
 
@@ -75,13 +97,7 @@ export function ItemCard({
         className="flex w-full cursor-pointer items-start gap-3 text-left"
       >
         {selecting && (
-          <input
-            type="checkbox"
-            readOnly
-            checked={!!selected}
-            tabIndex={-1}
-            className="mt-0.5"
-          />
+          <input type="checkbox" readOnly checked={!!selected} tabIndex={-1} className="mt-0.5" />
         )}
         <SourceTag source={item.source} />
         <span className="min-w-0 flex-1">
@@ -136,8 +152,12 @@ export function ItemCard({
           )}
           {unread > 0 && (
             <span
-              title={strings.panel.listUnread(unread)}
-              aria-label={strings.panel.listUnread(unread)}
+              title={
+                conversation ? strings.panel.newMessages(unread) : strings.panel.listUnread(unread)
+              }
+              aria-label={
+                conversation ? strings.panel.newMessages(unread) : strings.panel.listUnread(unread)
+              }
               className="inline-flex min-w-5 items-center justify-center gap-1 rounded-full bg-cesa-green px-1.5 py-0.5 text-xs font-bold text-cesa-950"
             >
               {unread}
@@ -145,6 +165,62 @@ export function ItemCard({
           )}
         </span>
       </button>
+
+      {foldable && (
+        <div className="mt-1.5">
+          <button
+            type="button"
+            aria-expanded={unfolded}
+            onClick={() => setUnfolded((v) => !v)}
+            className="flex min-h-6 cursor-pointer items-center gap-1 text-xs font-semibold text-cesa-mute transition hover:text-cesa-green"
+          >
+            {unfolded ? (
+              <ChevronDownIcon className="size-3.5" />
+            ) : (
+              <ChevronRightIcon className="size-3.5" />
+            )}
+            {unfolded
+              ? strings.panel.conversationHide
+              : strings.panel.conversationShow(messages.length)}
+          </button>
+          {unfolded && (
+            <ul className="mt-1 space-y-1">
+              {shown.map((m, i) => {
+                const isNew = !item.seen && i < newInConversation
+                return (
+                  <li key={m.ts}>
+                    <button
+                      type="button"
+                      onClick={open}
+                      className="flex w-full cursor-pointer items-baseline gap-2 rounded-lg px-2 py-1 text-left hover:bg-cesa-700/60"
+                    >
+                      <span className="shrink-0 text-xs text-cesa-mute">
+                        {strings.panel.ago(now - m.at)}
+                      </span>
+                      <span
+                        className={`line-clamp-2 min-w-0 flex-1 text-sm break-words ${isNew ? 'font-semibold text-cesa-ink' : 'text-cesa-mute'}`}
+                      >
+                        {m.text}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+              {hidden > 0 && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={open}
+                    className="min-h-6 cursor-pointer px-2 text-xs font-semibold text-cesa-green hover:underline"
+                  >
+                    {strings.panel.moreMessages(hidden)}
+                  </button>
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
+      )}
 
       {!selecting && (
         <div

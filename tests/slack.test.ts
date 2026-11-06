@@ -183,7 +183,8 @@ describe('Slack follow-ups', () => {
     sentByChannel: {
       DANA123: { at: now - 3 * DAY, text: 'propuesta', to: 'Ana', url: 'https://x/1' }
     },
-    lastIncoming: {} as Record<string, number>
+    lastIncoming: {} as Record<string, number>,
+    seenUpTo: {} as Record<string, number>
   })
 
   it('lists a DM nobody answered after the wait time', () => {

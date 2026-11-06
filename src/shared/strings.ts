@@ -28,6 +28,11 @@ export const strings = {
     listUnread: (n: number): string => (n === 1 ? '1 sin leer' : `${n} sin leer`),
     listOpen: 'Ver la conversación',
     newMessage: 'Mensaje nuevo',
+    // A conversation of Slack: one card, with its messages folded behind it.
+    newMessages: (n: number): string => `${n} mensajes nuevos`,
+    conversationShow: (n: number): string => `Ver ${n} mensajes`,
+    conversationHide: 'Ocultar los mensajes',
+    moreMessages: (n: number): string => (n === 1 ? 'Hay 1 mensaje más' : `Hay ${n} mensajes más`),
     meetingNear: 'Reunión en curso o en las próximas 12 horas',
     meetingDay: (offset: number, label: string): string =>
       offset === 0 ? 'Hoy' : offset === 1 ? 'Mañana' : label,

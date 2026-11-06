@@ -10,16 +10,18 @@ export type SentRecord = { at: number; text: string; to: string; url: string }
 export type DmState = {
   sentByChannel: Record<string, SentRecord> // the user's latest message per DM
   lastIncoming: Record<string, number> // when someone else last wrote in that DM
+  seenUpTo: Record<string, number> // up to when the person read each conversation (ms)
 }
 
-export const emptyDmState = (): DmState => ({ sentByChannel: {}, lastIncoming: {} })
+export const emptyDmState = (): DmState => ({ sentByChannel: {}, lastIncoming: {}, seenUpTo: {} })
 
 export function parseDmState(raw: string | undefined): DmState {
   try {
     const parsed = JSON.parse(raw ?? '') as Partial<DmState>
     return {
       sentByChannel: parsed.sentByChannel ?? {},
-      lastIncoming: parsed.lastIncoming ?? {}
+      lastIncoming: parsed.lastIncoming ?? {},
+      seenUpTo: parsed.seenUpTo ?? {}
     }
   } catch {
     return emptyDmState()
@@ -33,7 +35,10 @@ export function pruneDmState(state: DmState, now: number): DmState {
   const lastIncoming = Object.fromEntries(
     Object.entries(state.lastIncoming).filter(([, at]) => now - at <= FOLLOWUP_LOOKBACK_MS)
   )
-  return { sentByChannel, lastIncoming }
+  const seenUpTo = Object.fromEntries(
+    Object.entries(state.seenUpTo ?? {}).filter(([, at]) => now - at <= FOLLOWUP_LOOKBACK_MS)
+  )
+  return { sentByChannel, lastIncoming, seenUpTo }
 }
 
 export function slackFollowups(state: DmState, now: number, waitHours: number): Signal[] {

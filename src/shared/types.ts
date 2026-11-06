@@ -3,6 +3,14 @@ export type Source = 'slack' | 'gmail' | 'calendar' | 'clickup'
 // ClickUp's four task priorities (a task may also have none).
 export type TaskPriority = 'urgent' | 'high' | 'normal' | 'low'
 
+// One message of a Slack conversation, as the card of the conversation lists it.
+export type ConversationMessage = {
+  ts: string // Slack's own timestamp, the last part of the id of the message
+  at: number
+  text: string
+  sender?: string
+}
+
 export type Signal = {
   id: string // stable: `${source}:${externalId}`
   source: Source
@@ -27,6 +35,10 @@ export type Signal = {
   list?: { address: string; name: string }
   threadId?: string
   unread?: number
+  // Direct messages of Slack are one item per conversation, like the lists: the card is the latest
+  // message, `unread` how many are new, and `messages` the latest ones (newest first, up to
+  // MAX_CONVERSATION_MESSAGES) for the card to unfold.
+  messages?: ConversationMessage[]
   isBot?: boolean
   seen?: boolean // the user already opened it
   snoozedUntil?: number // only on the "snoozed" list: when it comes back

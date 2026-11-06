@@ -12,9 +12,11 @@ import type {
 import {
   clearSourceSignals,
   getAccount,
+  handledSignalIds,
   publish,
   setAccount,
   setAccountLabel,
+  setHandledListener,
   setSourceSignals
 } from './appState'
 import { CalendarConnector } from './connectors/calendar'
@@ -48,6 +50,9 @@ const SLACK_POLL_MS = 60 * 1000
 export { hasGoogleCredentials }
 
 export async function initAccounts(): Promise<void> {
+  // What the person opens, dismisses or snoozes in a Slack conversation counts as read, up to there.
+  slack.setSeenSource(() => handledSignalIds('slack'))
+  setHandledListener((ids) => slack.markRead(ids))
   registerConnector(clickup, CLICKUP_POLL_MS)
   registerConnector(calendar, CALENDAR_POLL_MS)
   registerConnector(gmail, GMAIL_POLL_MS)

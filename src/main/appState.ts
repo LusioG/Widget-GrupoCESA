@@ -162,6 +162,20 @@ export async function initInbox(): Promise<void> {
 }
 
 // Open/dismiss/snooze/restore/purge, for one item or a batch. Only known item ids are accepted.
+// Told which messages the person opened, dismissed or snoozed, so a conversation of Slack knows how
+// far it was read (see connectors/slack/conversations.ts). Set by accounts.ts.
+let onHandled: ((ids: string[]) => void) | null = null
+export function setHandledListener(listener: (ids: string[]) => void): void {
+  onHandled = listener
+}
+
+// The ids of everything the person already handled (opened, dismissed, snoozed) from one source.
+export function handledSignalIds(source: Source): string[] {
+  return [...inbox.values()]
+    .filter((row) => row.signalId.startsWith(`${source}:`) && row.status !== 'new')
+    .map((row) => row.signalId)
+}
+
 export async function applyItemAction(request: ItemAction): Promise<void> {
   const known = new Set([...bySource.values()].flat().map((s) => s.id))
   const now = Date.now()
@@ -198,6 +212,10 @@ export async function applyItemAction(request: ItemAction): Promise<void> {
     }
   }
   if (before.length > 0) lastChange = { at: now, rows: before }
+  if (request.action === 'seen' || request.action === 'dismiss' || request.action === 'snooze') {
+    const handled = request.ids.filter((id) => known.has(id) && id.startsWith('slack:'))
+    if (handled.length > 0) onHandled?.(handled)
+  }
   publish()
 }
 
