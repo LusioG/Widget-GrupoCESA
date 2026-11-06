@@ -242,12 +242,9 @@ export const strings = {
       listsRemove: 'Dejar de seguir',
       slackTitle: 'Canales de Slack',
       slackHint:
-        'Marca los canales a ignorar. Los mensajes directos y las menciones directas siguen llegando.',
+        'Elige para cada canal: normal, urgente o ignorar. En un canal urgente cualquier mención tuya sube al tope, se marca en rojo y avisa (con sonido) incluso en modo foco. En uno ignorado no se muestra nada. Los mensajes directos y las menciones directas siguen llegando.',
       needSlack: 'Conecta Slack en Cuentas para elegir canales.',
-      slackUrgentTitle: 'Canales urgentes de Slack',
-      slackUrgentHint:
-        'Marca los canales donde cualquier mención tuya es urgente: sube al tope, se marca en rojo y avisa (con sonido) incluso en modo foco.',
-      urgent: 'urgente',
+      urgent: 'urgente', // also the tag of a followed list
       slackPeopleTitle: 'Personas de Slack',
       slackPeopleHint:
         'Elige de quién quieres ver los mensajes directos y las menciones: normal, urgente o ignorar. Funciona con los mismos nombres que "Remitentes prioritarios" y "Remitentes a ignorar", así que también se aplica a sus correos de Gmail con ese nombre.',
@@ -258,7 +255,7 @@ export const strings = {
       calendarTitle: 'Reuniones de Calendar',
       needCalendar: 'Conecta Calendar en Cuentas para elegir hasta cuándo ver reuniones.',
       calendarHint:
-        'Hasta cuántos días hacia adelante se muestran las reuniones, contando hoy. Las que están en curso se ven siempre. El círculo amarillo del widget cuenta solo las de las próximas 24 horas.',
+        'Hasta cuántos días hacia adelante se muestran las reuniones, contando hoy. Las que están en curso se ven siempre. El círculo amarillo del widget cuenta solo las de las próximas 12 horas.',
       calendarShowTitle: 'Qué eventos mostrar',
       calendarShowHint:
         'Las reuniones con enlace de videollamada (Meet, Zoom, Teams) se distinguen de los eventos comunes, como un recordatorio o una cita sin enlace.',
@@ -280,7 +277,6 @@ export const strings = {
           : n === 2
             ? 'Se muestran las reuniones de hoy y de mañana.'
             : `Se muestran las reuniones de los próximos ${n} días.`,
-      ignore: 'ignorar',
       clickupTitle: 'Listas de ClickUp',
       all: 'Sin selección: se muestran todas tus tareas asignadas.',
       needClickUp: 'Conecta ClickUp en Cuentas para elegir qué vigilar.',
@@ -292,8 +288,6 @@ export const strings = {
       selectedCount: (n: number, total: number): string => `${n} de ${total} seleccionadas`,
       selectVisible: 'Seleccionar visibles',
       clear: 'Limpiar',
-      ignoreVisible: 'Ignorar visibles',
-      stopIgnoring: 'No ignorar ninguno',
       tasksTitle: 'Qué tareas mostrar',
       due: 'Vencimiento',
       dueOptions: { 3: '3 días', 7: '7 días', 14: '14 días', 30: '30 días', 90: '3 meses' },

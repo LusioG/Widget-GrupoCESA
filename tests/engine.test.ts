@@ -297,8 +297,10 @@ describe('badge in focus mode', () => {
   ]
   const meeting = sig({ id: 'm', kind: 'meeting', startsAt: now + 5 * 60_000, endsAt: now + HOUR })
 
-  it('counts everything normally', () => {
-    expect(computeBadge([...items, meeting], now).count).toBe(2)
+  it('counts the urgent item in the red circle and the rest in the green number', () => {
+    const b = computeBadge([...items, meeting], now)
+    expect(b.count).toBe(1)
+    expect(b.urgentCount).toBe(1)
   })
 
   it('counts only urgent items and silences the meeting highlight in focus', () => {

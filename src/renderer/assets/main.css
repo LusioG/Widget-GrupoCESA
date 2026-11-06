@@ -37,6 +37,47 @@ body,
   }
 }
 
+/* Checkboxes in the look of the panel: dark box with a visible border; the brand green with a
+   dark tick when on (the native ones are plain white). The whole row is the click target. */
+@layer base {
+  input[type='checkbox'] {
+    appearance: none;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    cursor: pointer;
+    border: 1.5px solid var(--color-cesa-line);
+    border-radius: 0.3rem;
+    background-color: var(--color-cesa-900);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 0.8rem;
+    transition:
+      background-color 0.12s,
+      border-color 0.12s;
+  }
+  input[type='checkbox']:hover {
+    border-color: var(--color-cesa-green);
+  }
+  input[type='checkbox']:checked,
+  input[type='checkbox']:indeterminate {
+    border-color: var(--color-cesa-green);
+    background-color: var(--color-cesa-green);
+  }
+  input[type='checkbox']:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%231a2424' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.2 8.5l3.1 3.1 6.5-7'/%3E%3C/svg%3E");
+  }
+  input[type='checkbox']:indeterminate {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%231a2424' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M3.5 8h9'/%3E%3C/svg%3E");
+  }
+  input[type='checkbox']:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
 @keyframes cesa-ping {
   0% {
     transform: scale(1);

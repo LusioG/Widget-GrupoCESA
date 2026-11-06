@@ -52,8 +52,23 @@ describe('urgent and meeting circles', () => {
       [task('a', 0.2), urgent('b'), urgent('c'), meeting('m1', 60), meeting('m2', 300)],
       now
     )
-    expect(b.count).toBe(3) // meetings are not pending items
+    expect(b.count).toBe(1) // meetings are not pending items, and urgent ones are in the red circle
     expect(b.urgentCount).toBe(2)
+    expect(b.meetingCount).toBe(2)
+  })
+
+  it('does not count an urgent item in the green number as well as in the red circle', () => {
+    const b = computeBadge([urgent('a')], now)
+    expect(b.urgentCount).toBe(1)
+    expect(b.count).toBe(0)
+    expect(computeBadge([urgent('a'), task('b', 0.2), task('c')], now).count).toBe(2)
+  })
+
+  it('counts meetings that are running or start within 12 hours, not later ones', () => {
+    const b = computeBadge(
+      [meeting('now', -10), meeting('in 11 h', 11 * 60), meeting('in 13 h', 13 * 60)],
+      now
+    )
     expect(b.meetingCount).toBe(2)
   })
 

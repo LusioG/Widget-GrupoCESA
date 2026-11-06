@@ -464,26 +464,17 @@ function SearchableChecklist({
   rows,
   isChecked,
   onToggle,
-  onBulk,
-  bulkLabel,
-  clearLabel,
-  hint,
-  suffix
+  hint
 }: {
   rows: Row[]
   isChecked: (row: Row) => boolean
   onToggle: (row: Row) => void
-  onBulk?: (rows: Row[]) => void
-  bulkLabel?: string
-  clearLabel?: string
   hint: string
-  suffix?: string
 }): React.JSX.Element {
   const [query, setQuery] = useState('')
   const visible = rows.filter((r) =>
     matchesQuery({ id: r.id, name: r.name, space: r.hint ?? '' }, query)
   )
-  const checked = rows.filter(isChecked).length
 
   return (
     <div className="space-y-2">
@@ -496,19 +487,6 @@ function SearchableChecklist({
           aria-label={s.searchPlain}
         />
       )}
-      {onBulk && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="flex-1 text-xs text-cesa-mute">
-            {s.selectedCount(checked, rows.length)}
-          </span>
-          <Button variant="ghost" disabled={visible.length === 0} onClick={() => onBulk(visible)}>
-            {bulkLabel}
-          </Button>
-          <Button variant="ghost" disabled={checked === 0} onClick={() => onBulk([])}>
-            {clearLabel}
-          </Button>
-        </div>
-      )}
       <div className="cesa-scroll max-h-60 space-y-1 overflow-y-auto">
         {visible.length === 0 ? (
           <p className="py-3 text-center text-xs text-cesa-mute">{s.noMatch}</p>
@@ -518,14 +496,9 @@ function SearchableChecklist({
               key={r.id}
               className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm text-cesa-ink hover:bg-cesa-700/50"
             >
-              <input
-                type="checkbox"
-                checked={isChecked(r)}
-                onChange={() => onToggle(r)}
-                className="accent-cesa-green"
-              />
+              <input type="checkbox" checked={isChecked(r)} onChange={() => onToggle(r)} />
               <span className="min-w-0 flex-1 truncate">{r.name}</span>
-              <span className="shrink-0 text-xs text-cesa-mute">{r.hint ?? suffix}</span>
+              {r.hint && <span className="shrink-0 text-xs text-cesa-mute">{r.hint}</span>}
             </label>
           ))
         )}
@@ -534,14 +507,27 @@ function SearchableChecklist({
   )
 }
 
-// ---------- Slack people: normal / urgent / ignore for each one ----------
+// ---------- Slack people and channels: normal / urgent / ignore for each one ----------
 
-function SlackPeople({ people }: { people: SlackPerson[] }): React.JSX.Element {
-  const filters = useAppStore((st) => st.state?.settings.filters)
+type RuleLists = { important: string[]; ignored: string[] }
+
+// One row per person or channel with its three options. `lists` are the two settings lists that
+// hold the urgent and the ignored names; `save` writes back the ones that changed.
+function RuleList({
+  rows,
+  hint,
+  lists,
+  save
+}: {
+  rows: Row[]
+  hint: string
+  lists: RuleLists
+  save: (next: RuleLists) => void
+}): React.JSX.Element {
   const [query, setQuery] = useState('')
-  if (!filters) return <></>
-  const lists = { important: filters.importantSenders, ignored: filters.ignoredSenders }
-  const visible = people.filter((p) => matchesQuery({ id: p.id, name: p.name, space: '' }, query))
+  const visible = rows.filter((r) =>
+    matchesQuery({ id: r.id, name: r.name, space: r.hint ?? '' }, query)
+  )
   const options: { value: PersonRule; label: string }[] = [
     { value: 'normal', label: s.personNormal },
     { value: 'urgent', label: s.personUrgent },
@@ -550,8 +536,8 @@ function SlackPeople({ people }: { people: SlackPerson[] }): React.JSX.Element {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-cesa-mute">{s.slackPeopleHint}</p>
-      {people.length > 6 && (
+      <p className="text-xs text-cesa-mute">{hint}</p>
+      {rows.length > 6 && (
         <TextField
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -563,25 +549,56 @@ function SlackPeople({ people }: { people: SlackPerson[] }): React.JSX.Element {
         {visible.length === 0 ? (
           <p className="py-3 text-center text-xs text-cesa-mute">{s.noMatch}</p>
         ) : (
-          visible.map((p) => (
-            <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1">
-              <span className="min-w-0 flex-1 truncate text-sm text-cesa-ink">{p.name}</span>
+          visible.map((r) => (
+            <div key={r.id} className="flex items-center gap-2 rounded-lg px-2 py-1">
+              <span className="min-w-0 flex-1 truncate text-sm text-cesa-ink">{r.name}</span>
+              {r.hint && <span className="shrink-0 text-xs text-cesa-mute">{r.hint}</span>}
               <Segment
-                label={p.name}
-                value={personRule(p.name, lists)}
+                label={r.name}
+                value={personRule(r.name, lists)}
                 options={options}
-                onChange={(rule) => {
-                  const next = setPersonRule(p.name, rule, lists)
-                  void window.api.settings.update({
-                    filters: { importantSenders: next.important, ignoredSenders: next.ignored }
-                  })
-                }}
+                onChange={(rule) => save(setPersonRule(r.name, rule, lists))}
               />
             </div>
           ))
         )}
       </div>
     </div>
+  )
+}
+
+function SlackPeople({ people }: { people: SlackPerson[] }): React.JSX.Element {
+  const filters = useAppStore((st) => st.state?.settings.filters)
+  if (!filters) return <></>
+  return (
+    <RuleList
+      rows={people.map((p) => ({ id: p.id, name: p.name }))}
+      hint={s.slackPeopleHint}
+      lists={{ important: filters.importantSenders, ignored: filters.ignoredSenders }}
+      save={(next) =>
+        void window.api.settings.update({
+          filters: { importantSenders: next.important, ignoredSenders: next.ignored }
+        })
+      }
+    />
+  )
+}
+
+// Channels are found by their "#name", in the same two lists the old separate sections used.
+function SlackChannels({ channels }: { channels: Row[] }): React.JSX.Element {
+  const filters = useAppStore((st) => st.state?.settings.filters)
+  if (!filters) return <></>
+  return (
+    <RuleList
+      rows={channels}
+      hint={s.slackHint}
+      lists={{ important: filters.importantChannels, ignored: filters.mutedChannels }}
+      save={(next) =>
+        void window.api.settings.update({
+          filters: { importantChannels: next.important, mutedChannels: next.ignored }
+        })
+      }
+    />
   )
 }
 
@@ -612,12 +629,7 @@ export function Watch(): React.JSX.Element {
   if (!settings) return <></>
   const cfg = settings.clickup
   const gmailIds = settings.gmail.labelIds
-  const muted = settings.filters.mutedChannels
-  const urgentChannels = settings.filters.importantChannels
   const shownTasks = (state?.signals ?? []).filter((x) => x.source === 'clickup').length
-
-  const setMuted = (names: string[]): Promise<void> =>
-    window.api.settings.update({ filters: { mutedChannels: names } })
 
   return (
     <div className="space-y-3">
@@ -664,56 +676,7 @@ export function Watch(): React.JSX.Element {
         loaded={slackRows !== null}
         empty={slackRows?.length === 0}
       >
-        <SearchableChecklist
-          rows={slackRows ?? []}
-          hint={s.slackHint}
-          suffix={s.ignore}
-          isChecked={(r) => muted.includes(r.name)}
-          onToggle={(r) => {
-            // An ignored channel cannot also be urgent.
-            const nextMuted = toggleIn(muted, r.name)
-            void window.api.settings.update({
-              filters: {
-                mutedChannels: nextMuted,
-                ...(nextMuted.includes(r.name) && {
-                  importantChannels: urgentChannels.filter((n) => n !== r.name)
-                })
-              }
-            })
-          }}
-          bulkLabel={s.ignoreVisible}
-          clearLabel={s.stopIgnoring}
-          onBulk={(visible) => {
-            // "Ignore visible" adds the shown channels; "none" clears every Slack channel from the list.
-            const slackNames = new Set((slackRows ?? []).map((r) => r.name))
-            if (visible.length === 0) setMuted(muted.filter((n) => !slackNames.has(n)))
-            else setMuted([...new Set([...muted, ...visible.map((r) => r.name)])])
-          }}
-        />
-      </Section>
-
-      <Section
-        title={s.slackUrgentTitle}
-        connected={slackOn}
-        needText={s.needSlack}
-        loaded={slackRows !== null}
-        empty={slackRows?.length === 0}
-      >
-        <SearchableChecklist
-          rows={slackRows ?? []}
-          hint={s.slackUrgentHint}
-          suffix={s.urgent}
-          isChecked={(r) => urgentChannels.includes(r.name)}
-          onToggle={(r) => {
-            const next = toggleIn(urgentChannels, r.name)
-            void window.api.settings.update({
-              filters: {
-                importantChannels: next,
-                ...(next.includes(r.name) && { mutedChannels: muted.filter((n) => n !== r.name) })
-              }
-            })
-          }}
-        />
+        <SlackChannels channels={slackRows ?? []} />
       </Section>
 
       <Section

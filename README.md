@@ -18,9 +18,10 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
     izquierda). Se arrastra para cambiarla de lado o de altura.
 - **Contadores del widget:**
   - **Número verde:** pendientes (tareas, correos, menciones, mensajes directos, esperando
-    respuesta). Las reuniones no cuentan. En modo foco cuenta solo los urgentes.
+    respuesta) que NO son urgentes: un pendiente urgente se cuenta solo en el círculo rojo, no
+    también en el verde. Las reuniones no cuentan. En modo foco cuenta solo los urgentes.
   - **Círculo rojo:** cuántos de esos pendientes son urgentes. Solo aparece si hay alguno.
-  - **Círculo amarillo:** reuniones en curso o de las próximas 24 horas. Solo aparece si hay alguna.
+  - **Círculo amarillo:** reuniones en curso o de las próximas 12 horas. Solo aparece si hay alguna.
   - En el **popup** los círculos salen en las esquinas del logo (rojo arriba a la izquierda,
     verde arriba a la derecha, amarillo abajo a la derecha). En la **solapa**, la barra se estira
     hacia abajo, de arriba abajo: logo, círculo **rojo**, círculo **amarillo**, número **verde** y
@@ -69,7 +70,7 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
   2 días (por defecto: hoy y mañana), 3 días, 1 semana o 2 semanas. Si abarca más de un día, el
   panel las agrupa con títulos ("Hoy", "Mañana", "jueves, 5 nov"). Las que están en curso se ven
   siempre. Cambiar el ajuste vuelve a leer el calendario al instante. El **círculo amarillo** del
-  widget cuenta solo las reuniones en curso o de las próximas 24 horas, sin importar este ajuste.
+  widget cuenta solo las reuniones en curso o de las próximas 12 horas, sin importar este ajuste.
 - **Remitentes prioritarios:** escribes un nombre o correo (por ejemplo el de la líder de soporte),
   pulsas **Añadir** (o Enter) y pasa a una lista debajo, con una ✕ para quitarlo de uno en uno. Lo
   mismo para **Remitentes a ignorar**. Todo lo

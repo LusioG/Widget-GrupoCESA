@@ -90,10 +90,10 @@ describe('meetings shown according to "days ahead"', () => {
     expect(shown()).not.toContain('over')
   })
 
-  it('the yellow circle counts only the next 24 hours, however far the list reaches', () => {
+  it('the yellow circle counts only the next 12 hours, however far the list reaches', () => {
     withDays(14)
-    // running, today-pm, today-late (13.5 h) and tomorrow 09:00 (23 h) are within 24 h of 10:00
-    expect(getState().badge.meetingCount).toBe(4)
+    // Of 10:00: running and today-pm are within 12 h; today-late (13.5 h) and tomorrow (23 h) are not.
+    expect(getState().badge.meetingCount).toBe(2)
     expect(shown().length).toBeGreaterThan(4)
   })
 })

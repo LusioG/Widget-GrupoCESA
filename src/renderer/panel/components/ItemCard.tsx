@@ -75,7 +75,7 @@ export function ItemCard({
             readOnly
             checked={!!selected}
             tabIndex={-1}
-            className="mt-1 accent-cesa-green"
+            className="mt-0.5"
           />
         )}
         <SourceTag source={item.source} />

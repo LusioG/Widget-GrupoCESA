@@ -1,9 +1,9 @@
 import type { BadgeState, Signal } from './types'
 
 export const MEETING_SOON_MS = 10 * 60 * 1000
-// The yellow circle counts meetings that are ongoing or start within a day, however far ahead the
-// meetings list is set to look.
-export const MEETING_COUNT_WINDOW_MS = 24 * 60 * 60 * 1000
+// The yellow circle counts meetings that are ongoing or start within 12 hours, however far ahead
+// the meetings list is set to look.
+export const MEETING_COUNT_WINDOW_MS = 12 * 60 * 60 * 1000
 export const URGENT_THRESHOLD = 0.8
 
 const isMessage = (s: Signal): boolean =>
@@ -31,7 +31,10 @@ export function computeBadge(
         (s.endsAt ?? s.startsAt) > now
     )
   return {
-    count: focus ? urgentItems.length : pending.length,
+    // An urgent item has its own (red) circle, so the green number leaves it out: otherwise one
+    // red task would also be counted as a green one and there would look like more than there are.
+    // In focus mode the red circle is hidden and the green number is the urgent count.
+    count: focus ? urgentItems.length : pending.length - urgentItems.length,
     urgent: urgentItems.length > 0,
     urgentCount: urgentItems.length,
     meetingCount: signals.filter(

@@ -35,10 +35,10 @@ export type Signal = {
 }
 
 export type BadgeState = {
-  count: number // pending items (the green number); in focus mode only the urgent ones
+  count: number // pending items that are NOT urgent (the green number); in focus mode only the urgent ones
   urgent: boolean
   urgentCount: number // pending items that are urgent (the red circle)
-  meetingCount: number // meetings shown in the panel: ongoing or within 24 h (the yellow circle)
+  meetingCount: number // meetings ongoing or within 12 h (the yellow circle)
   // A mail or Slack message arrived since the panel was last looked at: the red pulse. Tasks never
   // cause it; they only add to the counters.
   messageAlert: boolean
