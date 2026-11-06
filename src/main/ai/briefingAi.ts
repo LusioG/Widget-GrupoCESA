@@ -39,6 +39,14 @@ function itemData(item: BriefingItem, now: number): Record<string, unknown> {
     id: item.id,
     origen: strings.sources[item.source],
     titulo: maskForAi(item.title),
+    // Slack: who wrote it and how it reached the user. It goes only with the message itself, so it
+    // is under the same switch ("Mensajes de Slack").
+    ...(item.from
+      ? {
+          de: maskForAi(item.from),
+          tipo: item.kind === 'dm' ? 'mensaje directo' : 'mención en un canal'
+        }
+      : {}),
     ...(item.priority ? { prioridad: strings.panel.priority[item.priority] } : {}),
     ...(item.dueAt !== undefined
       ? { vence: localDate(item.dueAt), diasParaVencer: dayOffset(item.dueAt, now) }

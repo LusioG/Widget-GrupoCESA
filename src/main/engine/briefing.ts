@@ -44,6 +44,8 @@ function toItem(s: Signal): BriefingItem {
   if (s.meetingUrl) item.meetingUrl = s.meetingUrl
   if (s.dueAt !== undefined) item.dueAt = s.dueAt
   if (s.priority) item.priority = s.priority
+  // Who wrote a Slack message (not a follow-up, whose "sender" is someone else's reply to you).
+  if (s.source === 'slack' && s.kind !== 'followup' && s.sender) item.from = s.sender
   return item
 }
 

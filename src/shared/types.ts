@@ -144,6 +144,7 @@ export type BriefingItem = {
   meetingUrl?: string
   dueAt?: number
   priority?: TaskPriority
+  from?: string // Slack: who wrote the message
   urgent: boolean
   note?: string // written by the AI: why it matters
 }

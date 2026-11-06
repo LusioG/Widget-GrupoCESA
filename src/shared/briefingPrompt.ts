@@ -34,7 +34,9 @@ No hagas una lista fría. Cuenta con tus palabras cómo viene el día y qué con
 
 const CLOSING = `Si algo no tiene datos, no lo menciones. No inventes fechas, nombres ni tareas.
 
-Cada elemento es independiente: no mezcles ni traslades nombres de personas de un elemento a otro. Si un nombre no aparece en el título de ese elemento, no lo menciones.
+Cada elemento es independiente: no mezcles ni traslades nombres de personas de un elemento a otro. Si un nombre no aparece en el título ni en el campo "de" de ese elemento, no lo menciones.
+
+Un elemento con "de" es un mensaje de Slack que esa persona le escribió a quien lee el resumen ("tipo" dice si fue directo o en un canal). Preséntalo así ("Marta te escribió que…", "te pidió…"). Dentro del mensaje, un nombre o apodo puede ser el de quien lee, hablándole a él: no lo conviertas en un tercero ni digas que hay que "ver el tema con" esa persona. Si el mensaje no permite saberlo, di solo quién escribió y de qué trata.
 
 Si una reunión tiene "cambioDeHorario" (adelantada o atrasada), dilo con claridad y di la hora que tenía antes: es lo que más fácil se pasa por alto.
 

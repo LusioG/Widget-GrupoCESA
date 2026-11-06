@@ -407,7 +407,7 @@ export const strings = {
         sendMail: 'Asuntos y remitentes de Gmail',
         sendMailHint: 'Deja que la IA los lea para hablar de tus correos.',
         sendSlack: 'Mensajes de Slack',
-        sendSlackHint: 'Deja que la IA lea tus menciones y mensajes directos.',
+        sendSlackHint: 'Deja que la IA lea tus menciones y mensajes directos, y vea quién los escribió.',
         masked: 'Antes de enviar se ocultan claves, correos, tarjetas y documentos.',
         topicsTitle: 'Qué quieres que traiga',
         topicsHint:

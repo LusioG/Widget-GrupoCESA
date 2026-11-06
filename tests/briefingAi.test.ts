@@ -119,6 +119,77 @@ describe('what is sent to the AI', () => {
   })
 })
 
+describe('who wrote a Slack message', () => {
+  const boss = sig({
+    id: 'slack:8',
+    source: 'slack',
+    kind: 'dm',
+    title: 'lucho mañana lo vemos a primera hora',
+    sender: 'Pablo Calvo',
+    dueAt: undefined,
+    urgency: 0.9
+  })
+  const withBoss = buildBriefing({ signals: [...signals, boss], name: 'Luciano', now })
+  const sent = (settings: typeof ai): string =>
+    JSON.stringify(buildAiPayload(withBoss, settings, now).data)
+
+  it('goes with the message, as "de" and how it arrived', () => {
+    const text = sent({ ...ai, sendSlack: true })
+    expect(text).toContain('"de":"Pablo Calvo"')
+    expect(text).toContain('"tipo":"mensaje directo"')
+    expect(text).toContain('lucho mañana lo vemos a primera hora')
+  })
+
+  it('says a mention was in a channel', () => {
+    const mention = sig({
+      id: 'slack:9',
+      source: 'slack',
+      kind: 'mention',
+      sender: 'Marta Díaz',
+      dueAt: undefined
+    })
+    const b = buildBriefing({ signals: [mention], name: 'Luciano', now })
+    const text = JSON.stringify(buildAiPayload(b, { ...ai, sendSlack: true }, now).data)
+    expect(text).toContain('"tipo":"mención en un canal"')
+  })
+
+  it('is under the same switch as the message: with Slack off, neither the text nor the name goes', () => {
+    const text = sent(ai)
+    expect(text).not.toContain('Pablo Calvo')
+    expect(text).not.toContain('lucho mañana')
+  })
+
+  it('is not sent for mail, and a message without author has no "de"', () => {
+    const mail = sig({
+      id: 'gmail:10',
+      source: 'gmail',
+      kind: 'email',
+      sender: 'Ana <a@x.com>',
+      dueAt: undefined
+    })
+    const b = buildBriefing({
+      signals: [mail, sig({ id: 'slack:11', source: 'slack', kind: 'dm', dueAt: undefined })],
+      name: '',
+      now
+    })
+    const text = JSON.stringify(
+      buildAiPayload(b, { ...ai, sendMail: true, sendSlack: true }, now).data
+    )
+    expect(text).not.toContain('"de"')
+    expect(text).not.toContain('a@x.com')
+  })
+
+  it('still never sends the name of the user', () => {
+    expect(sent({ ...ai, sendSlack: true })).not.toContain('Luciano')
+  })
+
+  it('tells the AI the message was written to the reader, so a nickname in it is not a third person', () => {
+    const text = composeSystem(ai)
+    expect(text).toContain('campo "de"')
+    expect(text).toContain('no lo conviertas en un tercero')
+  })
+})
+
 describe('the instructions', () => {
   it('keep the tone and the format fixed and list what to bring, in order', () => {
     const text = composeSystem(ai)
