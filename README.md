@@ -67,7 +67,7 @@ relevantes de **Gmail**. Es de **solo lectura**: nunca crea, modifica ni borra n
   no está a pantalla completa: ahí usa el ocultado a mano.
 - **Modo foco / No molestar:** silencia lo no urgente; también se activa solo durante un evento
   llamado "Focus" del calendario.
-- **Notificaciones del sistema** pocas y filtradas, solo en horario laboral. Cada aviso nuevo va
+- **Notificaciones del sistema** pocas y filtradas, solo en horario laboral. El título dice quién escribió y dónde ("Slack · Pablo Calvo" si es un mensaje directo, "Slack · Pablo Calvo en #desarrollo" si es una mención en un canal, "Gmail · Soporte CESA" si es una lista de distribución). Cada aviso nuevo va
   acompañado de un **sonido** (una vez por tanda, aunque lleguen varios a la vez). El sonido también
   suena con los **correos y mensajes de Slack no urgentes** que llegan nuevos (la notificación del
   sistema sigue siendo solo para lo importante). Respeta horario, pausa y modo foco y se apaga en **Ajustes → Notificaciones y

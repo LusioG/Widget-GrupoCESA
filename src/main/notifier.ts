@@ -6,6 +6,7 @@ import gmailIcon from '../../resources/notify/gmail.png?asset'
 import slackIcon from '../../resources/notify/slack.png?asset'
 import { IPC } from '../shared/ipcChannels'
 import { beforeText, meetingMove } from '../shared/meetingMove'
+import { notificationText } from '../shared/notifyText'
 import { strings } from '../shared/strings'
 import type { AppState, Signal, Source } from '../shared/types'
 import { getState, onStateChange } from './appState'
@@ -84,11 +85,6 @@ function movedBody(s: Signal, now: number): string {
   )
 }
 
-function describe(s: Signal): { title: string; body: string } {
-  if (s.kind === 'meeting') return { title: strings.notify.meetingSoon, body: s.title }
-  return { title: strings.sources[s.source], body: s.title }
-}
-
 function onState(state: AppState): void {
   const now = Date.now()
   // The sound has its own switch: it follows the same quiet rules but not "Notificaciones del sistema".
@@ -128,7 +124,7 @@ function onState(state: AppState): void {
     return
   }
   for (const s of due) {
-    const { title, body } = describe(s)
+    const { title, body } = notificationText(s)
     show(title, body, s.source)
   }
 }

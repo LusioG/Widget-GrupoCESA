@@ -523,6 +523,8 @@ export const strings = {
     databaseReset:
       'No se pudo leer el archivo local de datos y se creó uno nuevo. Tus cuentas y ajustes pueden haberse reiniciado.',
     meetingSoon: 'Reunión por empezar',
+    // "Slack · Pablo Calvo en #desarrollo": where a mention was written.
+    inChannel: (channel: string): string => `en ${channel}`,
     testSlack: 'Ejemplo: Ana te escribió por mensaje directo',
     testGmail: 'Ejemplo: Factura vencida de un proveedor',
     testMeeting: 'Ejemplo: Revisión de presupuesto',
